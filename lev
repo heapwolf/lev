@@ -22,7 +22,11 @@ var replcfg = {
 
 var keypress = function keypress() {
   input.emit('keypress', '\r', { name: 'enter', ctrl: false, meta: false, shift: false });
-}
+};
+
+var escapeRegExp = function escapeRegExp(str) {
+  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+};
 
 var output = replcfg.output;
 var input = replcfg.input;
@@ -264,7 +268,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       }
 
       var _complete = r.complete;
-      var cmdRE = /\b(?:get|del|put|range)\s*\(['"](([\w\.\/-]+\/)?([\w\.\/-]*))/;
+      var cmdRE = /\b(?:get|del|put|range)\s*\((?:['"])(.*)/;
 
       r.complete = function(line, callback) {
 
@@ -277,13 +281,12 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           }
           else {
             
-            filter = cachedkeys.filter(function(e) { 
-              return e.indexOf(match[1]) > -1; 
+            filter = cachedkeys.filter(function(e) {
+              return e.match(new RegExp('^' + escapeRegExp(match[1]) + '(?:.*?)$'));
             });
           }
 
           var list = (filter.length > 0) ? filter : cachedkeys;
-
           return callback(null, [list, match[1]]);
         }
         _complete.apply(this, arguments);

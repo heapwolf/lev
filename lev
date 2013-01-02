@@ -35,7 +35,9 @@ var cachedkeys = [];
 
 fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
 
-  var location, cli;
+  var location;
+  var commands = {};
+  var formatting;
 
   if (err && err.errno === 34) {
     process.stderr.write('error. no leveldb found in this directory (try using `--location`).\r\n');
@@ -51,220 +53,355 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       return output.write(err);
     }
 
-    var m = {};
+    commands.pwd = {
 
-    m.pwd = function() {
-      return location;
+      description: 'Locaiton of the current database',
+      cli: false,
+      method: function() {
+        return location;
+      }
     };
 
-    m.readStream = m.r = function(start, end, limit) {
+    commands.readStream = {
 
-      var opts = {};
+      description: 'A readable stream of the full database.',
+      usage: '',
+      shorthand: 'r',
+      cli: true,
+      method: function(start, end, limit) {
 
-      if (argv.r) {
-        opts.start = argv.r;
-        opts.end = argv._[0] || argv.start + '~';
-        opts.limit = argv.limit || argv.l || -1;
-        opts.reverse = argv.reverse || false;
-      }
-      else if (typeof arguments[0] === 'number') {
-        limit = arguments[0];
-        start = undefined;
-        end = undefined;
-      }
-      else if (typeof arguments[0] === 'object') {
-        opts = arguments[0];
-      }
-      else {
-        opts = {
-          start: start || argv.start,
-          end: (end || argv.end || start + '~'),
-          limit: (limit || argv.limit || 80)
-        };
-      }
+        var opts = {};
 
-      db.readStream(opts)
-        .on('data', function(data) {
-          if (m.formatting || argv.format) {
-            output.write('\r\n' + data);
-          }
-          else {
-            output.write(data);
-          }
-        })
-        .on('end', function() { 
-          keypress();
-        })
-      ;
-    };
-
-    m.get = m.g = function(key, cb) {
-
-      key = key || argv.get;
-
-      if (!key) { 
-        return new Error('missing argument'); 
-      }
-
-      db.get(key, function(err, value) {
-
-        if (err) {
-          output.write(err + '\r\n');
-          return cb && cb(err);
+        if (argv.r) {
+          opts.start = argv.r;
+          opts.end = argv._[0] || argv.start + '~';
+          opts.limit = argv.limit || argv.l || -1;
+          opts.reverse = argv.reverse || false;
         }
-        if (m.formatting || argv.format) {
-          output.write('\r\n' + value + '\r\n');
-          keypress();
+        else if (typeof arguments[0] === 'number') {
+          limit = arguments[0];
+          start = undefined;
+          end = undefined;
+        }
+        else if (typeof arguments[0] === 'object') {
+          opts = arguments[0];
         }
         else {
-          output.write(String(value));
-        }
-        cb && cb(null, value);
-      });
-    };
-
-    m.put = m.p = function(key, value, cb) {
-
-      key = key || argv.put;
-      value = value || argv._[0];
-
-      if (!key) { 
-        return new Error('missing argument'); 
-      }
-
-      db.put(key, value, function(err) {
-        if (err) {
-          output.write(err + '\r\n');
-          return cb && cb(err);
-        }
-        output.write('OK\r\n');
-        keypress();
-        return cb && cb(null);
-      });
-    };
-
-    m.del = m.d = function(key, opts, cb) {
-     
-      key = key || argv.del;
-
-      if (!key) { 
-        return new Error('missing argument'); 
-      }
-
-      db.del(key, function(err) {
-        if (err) {
-          return cb && cb(err);
-        }
-        output.write('OK\r\n');
-        keypress();
-        return cb && cb(null);
-      });
-    };
-
-    m.keys = m.k = function(opts) {
-
-      cachedkeys = [];
-
-      if (argv.limit || argv.l) {
-        opts = { limit: argv.limit || argv.l };
-      }
-      else if (typeof opts === 'number') {
-        opts = { limit: opts };
-      }
-
-      db.keyStream(opts)
-        .on('data', function (data) {
-
-          cachedkeys.push(data);
-
-          (m.formatting || argv.format)
-            ? output.write('\r\n' + data)
-            : output.write(String(data))
-          ;
-        })
-        .on('end', function() {
-          output.write('\r\n');
-          keypress();
-        })
-      ;
-    };
-
-    m.approximateSize = function(start, end, callback) {
-
-      start = start || argv._[0] || ' ';
-      end = end || argv._[1] || '~';
-
-      callback = callback || function (err, size) { 
-
-        if (err) {
-          return output.write(err);
+          opts = {
+            start: start || argv.start,
+            end: (end || argv.end || start + '~'),
+            limit: (limit || argv.limit || 80)
+          };
         }
 
-        (m.formatting || argv.format)
-          ? output.write('\r\n' + size)
-          : output.write(String(size))
+        db.readStream(opts)
+          .on('data', function(data) {
+            if (formatting) {
+              output.write('\r\n' + data);
+            }
+            else {
+              output.write(data);
+            }
+          })
+          .on('end', function() { 
+            keypress();
+          })
         ;
-      };
-
-      db.approximateSize(start, end, callback);
+      }
     };
 
-    m.values = m.v = function(opts) {
+    commands.get = {
 
-      if (argv.limit || argv.l) {
-        opts = { limit: argv.limit || argv.l };
+      description: 'Fetch data from the store.',
+      usage: '',
+      shorthand: 'g',
+      cli: true,
+      method: function(key, cb) {
+
+        key = key || argv.get || argv.g;
+
+        if (!key) { 
+          return new Error('missing argument'); 
+        }
+
+        db.get(key, function(err, value) {
+
+          if (err) {
+            output.write(err + '\r\n');
+            return cb && cb(err);
+          }
+          if (formatting) {
+            output.write('\r\n' + JSON.parse(value, 2) + '\r\n');
+            keypress();
+          }
+          else {
+            output.write(String(value));
+          }
+          cb && cb(null, value);
+        });
       }
-      else if (typeof opts === 'number') {
-        opts = { limit: opts };
+    };
+
+    commands.put = {
+
+      description: 'Insert data into the store.',
+      usage: '',
+      shorthand: 'p',
+      cli: true,
+      method: function(key, value, cb) {
+
+        key = key || argv.put || argv.p;
+        value = value || argv._[0];
+
+        if (!key) { 
+          return new Error('missing argument'); 
+        }
+
+        db.put(key, value, function(err) {
+          if (err) {
+            output.write(err + '\r\n');
+            return cb && cb(err);
+          }
+          output.write('OK\r\n');
+          keypress();
+          return cb && cb(null);
+        });
       }
+    };
 
-      db.valueStream(opts)
-        .on('data', function (data) {
+    commands.del = {
 
-          if (m.truncate > -1 || (argv.tuncate && argv.truncate > -1)) {
-            data = data.substr(0, m.truncate || argv.truncate);
+      description: 'Remove data from the store.',
+      usage: '',
+      shorthand: 'd',
+      cli: true,
+      method: function(key, opts, cb) {
+
+        key = key || argv.del || argv.d;
+
+        if (!key) { 
+          return new Error('missing argument'); 
+        }
+
+        db.del(key, function(err) {
+          if (err) {
+            return cb && cb(err);
+          }
+          output.write('OK\r\n');
+          keypress();
+          return cb && cb(null);
+        });
+      }
+    };
+
+    commands.keys = {
+      
+      description: 'A readable stream of all keys in the database',
+      usage: '',
+      shorthand: 'k',
+      cli: true,
+      method: function(opts) {
+
+        //
+        // TODO: should only cache if this is in the repl.
+        //
+        cachedkeys = [];
+ 
+        if (typeof opts === 'number') {
+          opts = { limit: opts };
+        }
+        else if (typeof opts === 'string') {
+          opts = {
+            start: opts,
+            end: arguments[1] || opts + '~',
+            limit: arguments[2] || -1
+          }
+        }
+        else if (argv.k) {
+
+          var opts = {};
+
+          if (typeof argv.k === 'number') {
+            opts.limit = argv.k;
+          }
+          else {
+            opts.start = argv.k;
+            opts.end = argv._[0] || opts.start + '~';
+            opts.limit = argv._[1] || -1;
+          }
+        }
+
+        db.keyStream(opts)
+          .on('data', function (data) {
+
+            cachedkeys.push(data);
+
+            formatting
+              ? output.write('\r\n' + data)
+              : output.write(String(data))
+            ;
+          })
+          .on('end', function() {
+            output.write('\r\n');
+            keypress();
+          })
+        ;
+      }
+    };
+
+    commands.approximateSize = {
+
+      description: 'Get the approximate number of bytes of file system space used by the given range',
+      usage: '',
+      shorthand: 'a',
+      cli: true,
+      method: function(start, end, callback) {
+
+        start = start || argv._[0] || ' ';
+        end = end || argv._[1] || '~';
+
+        callback = callback || function (err, size) { 
+
+          if (err) {
+            return output.write(err);
           }
 
-          (m.formatting || argv.format)
-            ? output.write('\r\n' + data)
-            : output.write(String(data))
+          formatting
+            ? output.write('\r\n' + size)
+            : output.write(String(size))
           ;
-        })
-        .on('end', function() {
-          output.write('\r\n');
-          keypress();
-        })
-      ;
+        };
+
+        db.approximateSize(start, end, callback);
+      }
     };
 
-    m.isOpen = function() {
-      return db.isOpen();
+    commands.values = {
+
+      description: 'A readable stream of all values in the database',
+      usage: '',
+      shorthand: 'v',
+      cli: true,
+      method: function(opts) {
+
+        if (argv.limit || argv.l) {
+          opts = { limit: argv.limit || argv.l };
+        }
+        else if (typeof opts === 'number') {
+          opts = { limit: opts };
+        }
+
+        db.valueStream(opts)
+          .on('data', function (data) {
+
+            if (truncate > -1 || (argv.tuncate && argv.truncate > -1)) {
+              data = data.substr(0, truncate || argv.truncate);
+            }
+
+            formatting
+              ? output.write('\r\n' + data)
+              : output.write(String(data))
+            ;
+          })
+          .on('end', function() {
+            output.write('\r\n');
+            keypress();
+          })
+        ;
+      }
     };
 
-    m.isClosed = function() {
-      return db.isClosed();
+    commands.format = {
+      description: 'Make nice(r) output to standard out.',
+      usage: '',
+      shorthand: 'f',
+      cli: true,
+      method: function(b) {
+        return formatting = b || argv.format || argv.f;
+      }
     };
 
-    m.formatting = false;
+    commands.help = {
+      description: 'This help',
+      usage: '',
+      shorthand: 'h',
+      cli: true,
+      method: function() {
 
-    m.format = function(b) {
-      return m.formatting = b;
-    }
+        var longestkey = 0, padding = ' ';
 
-    for (var cmd in argv) { 
-      if (m[cmd]) {
-        cli = true;
-        m[cmd](argv[cmd]);
+        for (var command in commands) {
+          if (command.length > longestkey) {
+            longestkey = command.length;
+          }
+        }
+
+        while(longestkey) {
+          padding += ' ';
+          longestkey--;
+        }
+
+        var help = [];
+
+        for (var command in commands) {
+          var c = commands[command];
+          var s = '  ';
+          
+          if (argv.help || argv.h) {
+            if (!c.cli) {
+              continue;
+            }
+
+            s = (c.shorthand && '-' + c.shorthand);
+            command = '--' + command;
+          }
+          else {
+            command = command + '()';
+          }
+
+          help.push([
+            s,
+            command + padding.slice(command.length-2),
+            c.description
+          ].join(' '));
+        }
+
+        output.write(help.join('\r\n') + '\r\n');
+      }
+    };
+
+    var shorthandmap = {};
+    var cliop;
+
+    for (var command in commands) {
+      var s = commands[command].shorthand;
+      if (s) {
+        shorthandmap[s] = command;
       }
     }
 
-    if (!cli) {
+    //
+    // test if this was meant to be executed from the commandline.
+    //
+    for (var command in argv) {
+
+      var c;
+
+      if (shorthandmap[command]) {
+        commands[shorthandmap[command]].method();
+        cliop = true;
+      }
+      else if (commands[command] && commands[command].cli) {
+        commands[command].method();
+        cliop = true;
+      }
+    }
+
+    if (!cliop) {
       var r = repl.start(replcfg);
       
-      for (var key in m) {
-        if (key.length > 1) {
-          r.context[key] = m[key];
-        }
+      for (var command in commands) {
+        r.context[command] = commands[command].method;
       }
 
       var _complete = r.complete;

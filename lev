@@ -27,6 +27,8 @@ var keypress = function keypress() {
 var output = replcfg.output;
 var input = replcfg.input;
 
+var cachedkeys = [];
+
 fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
 
   var location, cli;
@@ -111,7 +113,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           keypress();
         }
         else {
-          output.write(null, value);
+          output.write(null, String(value));
         }
         cb && cb(null, value);
       });
@@ -157,6 +159,8 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
 
     m.keys = m.k = function(opts) {
 
+      cachedkeys = [];
+
       if (argv.limit || argv.l) {
         opts = { limit: argv.limit || argv.l };
       }
@@ -167,9 +171,11 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       db.keyStream(opts)
         .on('data', function (data) {
 
+          cachedkeys.push(data);
+
           (m.formatting || argv.format)
             ? output.write('\r\n' + data)
-            : output.write(data)
+            : output.write(String(data))
           ;
         })
         .on('end', function() {
@@ -217,7 +223,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
 
           (m.formatting || argv.format)
             ? output.write('\r\n' + data)
-            : output.write(data)
+            : output.write(String(data))
           ;
         })
         .on('end', function() {
@@ -241,7 +247,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       return m.formatting = b;
     }
 
-    for (var cmd in argv) {
+    for (var cmd in argv) { 
       if (m[cmd]) {
         cli = true;
         m[cmd](argv[cmd]);
@@ -256,6 +262,33 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           r.context[key] = m[key];
         }
       }
+
+      var _complete = r.complete;
+      var cmdRE = /\b(?:get|del|put|range)\s*\(['"](([\w\.\/-]+\/)?([\w\.\/-]*))/;
+
+      r.complete = function(line, callback) {
+
+        var match = line.match(cmdRE);
+        var filter = [];
+
+        if (match) {
+          if (cachedkeys.length === 0) {
+            callback(null, [[], '']);
+          }
+          else {
+            
+            filter = cachedkeys.filter(function(e) { 
+              return e.indexOf(match[1]) > -1; 
+            });
+          }
+
+          var list = (filter.length > 0) ? filter : cachedkeys;
+
+          return callback(null, [list, match[1]]);
+        }
+        _complete.apply(this, arguments);
+
+      };
     }
-   });
+  });
 });

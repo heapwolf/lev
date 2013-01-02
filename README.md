@@ -1,7 +1,7 @@
 lev
 ===
 
-A commandline tool and repl for `leveldb`.
+A commandline tool and repl (with autocomplete) for `leveldb`.
 
 ```bash
 $npm install lev -g
@@ -30,7 +30,11 @@ lev -k 3
 ```
 
 ## As a REPL
+The REPL has autocomplete for keys. First run `keys()` to create a cache then
+type `get('...<tab>`, `put('...<tab>`, etc. 
+
 ```bash
 $lev
 >get('keyname')
 ```
+

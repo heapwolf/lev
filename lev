@@ -41,6 +41,10 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
 
   levelup(location, levelcfg, function(err, db) {
 
+    if (err) {
+      return output.write(err);
+    }
+
     var m = {};
 
     m.pwd = function() {
@@ -52,7 +56,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       var opts = {};
 
       if (argv.r) {
-        opts.stat = argv.r;
+        opts.start = argv.r;
         opts.end = argv._[0] || argv.start + '~';
         opts.limit = argv.limit || argv.l || -1;
         opts.reverse = argv.reverse || false;
@@ -104,12 +108,12 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
         }
         if (m.formatting || argv.format) {
           output.write('\r\n' + value + '\r\n');
-        }
-        else {
-          output.write(value);
           keypress();
         }
-        cb && cb(value);
+        else {
+          output.write(null, value);
+        }
+        cb && cb(null, value);
       });
     };
 
@@ -127,9 +131,27 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           output.write(err + '\r\n');
           return cb && cb(err);
         }
-        output.write('success\r\n');
+        output.write('OK\r\n');
         keypress();
-        return cb && cb();
+        return cb && cb(null);
+      });
+    };
+
+    m.del = m.d = function(key, opts, cb) {
+     
+      key = key || argv.del;
+
+      if (!key) { 
+        return new Error('missing argument'); 
+      }
+
+      db.del(key, function(err) {
+        if (err) {
+          return cb && cb(err);
+        }
+        output.write('OK\r\n');
+        keypress();
+        return cb && cb(null);
       });
     };
 
@@ -155,6 +177,26 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           keypress();
         })
       ;
+    };
+
+    m.approximateSize = function(start, end, callback) {
+
+      start = start || argv._[0] || ' ';
+      end = end || argv._[1] || '~';
+
+      callback = callback || function (err, size) { 
+
+        if (err) {
+          return output.write(err);
+        }
+
+        (m.formatting || argv.format)
+          ? output.write('\r\n' + size)
+          : output.write(String(size))
+        ;
+      };
+
+      db.approximateSize(start, end, callback);
     };
 
     m.values = m.v = function(opts) {
@@ -185,6 +227,14 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       ;
     };
 
+    m.isOpen = function() {
+      return db.isOpen();
+    };
+
+    m.isClosed = function() {
+      return db.isClosed();
+    };
+
     m.formatting = false;
 
     m.format = function(b) {
@@ -202,7 +252,9 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       var r = repl.start(replcfg);
       
       for (var key in m) {
-        r.context[key] = m[key];
+        if (key.length > 1) {
+          r.context[key] = m[key];
+        }
       }
     }
    });

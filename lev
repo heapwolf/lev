@@ -20,14 +20,6 @@ var replcfg = {
   output: process.stdout
 };
 
-var levcfg = {
-  JSON: true
-};
-
-if (typeof argv.JSON === 'boolean') {
-  levcfg.JSON = argv.JSON;
-}
-
 var keypress = function keypress() {
   input.emit('keypress', '\r', { name: 'enter', ctrl: false, meta: false, shift: false });
 }
@@ -40,7 +32,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
   var location, cli;
 
   if (err && err.errno === 34) {
-    process.stderr.write('error. no leveldb found in this directory.\r\n');
+    process.stderr.write('error. no leveldb found in this directory (try using `--location`).\r\n');
     process.exit(1);
   }
   else {
@@ -55,7 +47,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       return location;
     };
 
-    m.readStream = function(start, end, limit) {
+    m.readStream = m.r = function(start, end, limit) {
 
       var opts = {};
 
@@ -83,8 +75,8 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
 
       db.readStream(opts)
         .on('data', function(data) {
-          if (m.JSON) {
-            output.write('\r\n' + JSON.stringify(data));
+          if (argv.format) {
+            output.write('\r\n' + data);
           }
           else {
             output.write(data);
@@ -96,9 +88,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       ;
     };
 
-    m.r = m.readStream;
-
-    m.get = function(key, cb) {
+    m.get = m.g = function(key, cb) {
 
       key = key || argv.get;
 
@@ -112,8 +102,8 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           output.write(err + '\r\n');
           return cb && cb(err);
         }
-        if (m.JSON) {
-          output.write('\r\n' + JSON.stringify(value) + '\r\n');
+        if (argv.format) {
+          output.write('\r\n' + value + '\r\n');
         }
         else {
           output.write(value);
@@ -123,9 +113,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       });
     };
 
-    m.g = m.get;
-
-    m.put = function(key, value, cb) {
+    m.put = m.p = function(key, value, cb) {
 
       key = key || argv.put;
       value = value || argv._[0];
@@ -145,9 +133,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       });
     };
 
-    m.p = m.put;
-
-    m.keys = function(opts) {
+    m.keys = m.k = function(opts) {
 
       if (argv.limit || argv.l) {
         opts = { limit: argv.limit || argv.l };
@@ -158,8 +144,9 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
 
       db.keyStream(opts)
         .on('data', function (data) {
-          m.JSON
-            ? output.write('\r\n' + JSON.stringify(data))
+
+          argv.format
+            ? output.write('\r\n' + data)
             : output.write(data)
           ;
         })
@@ -170,9 +157,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       ;
     };
 
-    m.k = m.keys;
-
-    m.values = function(opts) {
+    m.values = m.v = function(opts) {
 
       if (argv.limit || argv.l) {
         opts = { limit: argv.limit || argv.l };
@@ -189,7 +174,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           }
 
           r.context.format
-            ? output.write('\r\n' + JSON.stringify(data))
+            ? output.write('\r\n' + data)
             : output.write(data)
           ;
         })
@@ -199,8 +184,6 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
         })
       ;
     };
-
-    m.v = m.values;
 
     for (var cmd in argv) {
       if (m[cmd]) {

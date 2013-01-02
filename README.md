@@ -1,9 +1,17 @@
 lev
 ===
 
-commandline and repl leveldb
+A commandline tool and repl for `leveldb`.
 
-# As a commandline tool
+```bash
+$npm install lev -g
+```
+
+Assumes data is JSON by default. Use `--JSON false` for other types of data.
+
+# Usage
+
+## As a commandline tool
 Do a range query to stdout (with a limit of 10)
 
 ```js
@@ -22,7 +30,7 @@ Print all the keys to stdout (with a limit of 3)
 lev -k 3
 ```
 
-# As a REPL
+## As a REPL
 ```bash
 $lev
 >get('keyname')

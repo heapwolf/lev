@@ -4,7 +4,7 @@ lev
 commandline and repl leveldb
 
 # usage
-Do a range query to stduot (with a limit of 10)
+Do a range query to stdout (with a limit of 10)
 
 ```js
 lev -r 'foo' 'foobar' -l 10

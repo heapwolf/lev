@@ -1,6 +1,6 @@
 
 # Synopsis
-A commandline tool and repl (with autocomplete) for `leveldb`.
+A commandline tool and repl (with autocomplete and suggestions for keys) for `leveldb`.
 
 # Installation
 ```bash
@@ -8,10 +8,10 @@ $npm install lev -g
 ```
 
 # Usage
-All commands accept the same options as the levelup methods. They also parse
-the parameters to for your convenience, for instance specifying `keys(4)` or
-`lev -k 4` to get the first four keys. These convenience methods are detailed 
-below.
+All commands are synonymous with the methods in the `[levelup][0]` libaray with 
+the exception that they also parameters to for your convenience. For instance, 
+you can specify `keys(4)` or `lev -k 4` to get the first four keys in the database. 
+These convenience methods are detailed below.
 
 ## As a commandline tool
 
@@ -61,5 +61,4 @@ $lev
 >get('keyname')
 ```
 
-# Commands
 

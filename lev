@@ -35,7 +35,7 @@ var keypress = function keypress() {
 var output = replcfg.output;
 var input = replcfg.input;
 
-fs.stat(path.join('.', 'LOCK'), function(err) {
+fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
 
   var location, cli;
 
@@ -44,7 +44,7 @@ fs.stat(path.join('.', 'LOCK'), function(err) {
     process.exit(1);
   }
   else {
-    location = process.cwd();
+    location = argv.location || process.cwd();
   }
 
   levelup(location, levelcfg, function(err, db) {

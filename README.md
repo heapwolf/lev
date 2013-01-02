@@ -7,8 +7,6 @@ A commandline tool and repl for `leveldb`.
 $npm install lev -g
 ```
 
-Assumes data is JSON by default. Use `--JSON false` for other types of data.
-
 # Usage
 
 ## As a commandline tool

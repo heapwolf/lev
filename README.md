@@ -3,7 +3,7 @@ lev
 
 commandline and repl leveldb
 
-# usage
+# As a commandline tool
 Do a range query to stdout (with a limit of 10)
 
 ```js
@@ -20,4 +20,10 @@ Print all the keys to stdout (with a limit of 3)
 
 ```js
 lev -k 3
+```
+
+# As a REPL
+```bash
+$lev
+>get('keyname')
 ```

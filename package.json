@@ -1,6 +1,6 @@
 {
   "name": "lev",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "bin": "./lev",
   "description": "commandline and REPL access for leveldb",
   "main": "lev",

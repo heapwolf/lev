@@ -326,7 +326,13 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       usage: '',
       shorthand: 'h',
       cli: true,
-      method: function() {
+      method: function(method) {
+
+        output.write('\r\n');
+
+        //
+        // TODO: get individual help
+        //
 
         var longestkey = 0, padding = ' ';
 

@@ -2,7 +2,7 @@
   "name": "lev",
   "version": "0.0.1",
   "description": "commandline and REPL access for leveldb",
-  "main": "index.js",
+  "main": "lev",
   "dependencies": {
     "levelup": "0.4.4",
     "optimist": "0.3.4"

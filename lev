@@ -1,0 +1,214 @@
+#!/usr/bin/env node
+
+var repl = require('repl');
+var fs = require('fs');
+var path = require('path');
+var levelup = require('levelup');
+var argv = require('optimist').argv;
+
+var levelcfg = { 
+  createIfMissing: argv.createIfMissing || false, 
+  errorIfExists: argv.errorIfExists || false, 
+  compression: argv.compression || true,
+  encoding: argv.encoding || 'utf8',
+  keyEncoding: argv.keyEncoding || 'utf8',
+};
+
+var replcfg = {
+  prompt: '>',
+  input: process.stdin,
+  output: process.stdout
+};
+
+var levcfg = {
+  JSON: true
+};
+
+if (typeof argv.JSON === 'boolean') {
+  levcfg.JSON = argv.JSON;
+}
+
+var keypress = function keypress() {
+  input.emit('keypress', '\r', { name: 'enter', ctrl: false, meta: false, shift: false });
+}
+
+var output = replcfg.output;
+var input = replcfg.input;
+
+fs.stat(path.join('.', 'LOCK'), function(err) {
+
+  var location, cli;
+
+  if (err && err.errno === 34) {
+    process.stderr.write('error. no leveldb found in this directory.\r\n');
+    process.exit(1);
+  }
+  else {
+    location = process.cwd();
+  }
+
+  levelup(location, levelcfg, function(err, db) {
+
+    var m = {};
+
+    m.JSON = !!argv.JSON || true;
+
+    m.pwd = function() {
+      return location;
+    };
+
+    m.readStream = function(start, end, limit) {
+
+      var opts = {};
+
+      if (argv.r) {
+        opts.stat = argv.r;
+        opts.end = argv._[0] || argv.start + '~';
+        opts.limit = argv.limit || argv.l || -1;
+        opts.reverse = argv.reverse || false;
+      }
+      else if (typeof arguments[0] === 'number') {
+        limit = arguments[0];
+        start = undefined;
+        end = undefined;
+      }
+      else if (typeof arguments[0] === 'object') {
+        opts = arguments[0];
+      }
+      else {
+        opts = {
+          start: start || argv.start,
+          end: (end || argv.end || start + '~'),
+          limit: (limit || argv.limit || 80)
+        };
+      }
+
+      db.readStream(opts)
+        .on('data', function(data) {
+          if (m.JSON) {
+            output.write('\r\n' + JSON.stringify(data));
+          }
+          else {
+            output.write(data);
+          }
+        })
+        .on('end', function() { 
+          keypress();
+        })
+      ;
+    };
+
+    m.r = m.readStream;
+
+    m.get = function(key, cb) {
+
+      key = key || argv.get;
+
+      if (!key) { 
+        return new Error('missing argument'); 
+      }
+
+      db.get(key, function(err, value) {
+
+        if (err) {
+          output.write(err + '\r\n');
+          return cb && cb(err);
+        }
+        if (m.JSON) {
+          output.write('\r\n' + JSON.stringify(value) + '\r\n');
+        }
+        else {
+          output.write(value);
+          keypress();
+        }
+        cb && cb(value);
+      });
+    };
+
+    m.put = function(key, value, cb) {
+
+      key = key || argv.put;
+      value = value || argv._[0];
+
+      if (!key) { 
+        return new Error('missing argument'); 
+      }
+
+      db.put(key, value, function(err) {
+        if (err) {
+          output.write(err + '\r\n');
+          return cb && cb(err);
+        }
+        output.write('success\r\n');
+        keypress();
+        return cb && cb();
+      });
+    };
+
+    m.keys = function(opts) {
+
+      if (argv.limit || argv.l) {
+        opts = { limit: argv.limit || argv.l };
+      }
+      else if (typeof opts === 'number') {
+        opts = { limit: opts };
+      }
+
+      db.keyStream(opts)
+        .on('data', function (data) {
+          m.JSON
+            ? output.write('\r\n' + JSON.stringify(data))
+            : output.write(data)
+          ;
+        })
+        .on('end', function() {
+          output.write('\r\n');
+          keypress();
+        })
+      ;
+    };
+
+    m.values = function(opts) {
+
+      if (argv.limit || argv.l) {
+        opts = { limit: argv.limit || argv.l };
+      }
+      else if (typeof opts === 'number') {
+        opts = { limit: opts };
+      }
+
+      db.valueStream(opts)
+        .on('data', function (data) {
+
+          if (m.truncate > -1 || (argv.tuncate && argv.truncate > -1)) {
+            data = data.substr(0, m.truncate || argv.truncate);
+          }
+
+          r.context.format
+            ? output.write('\r\n' + JSON.stringify(data))
+            : output.write(data)
+          ;
+        })
+        .on('end', function() {
+          output.write('\r\n');
+          keypress();
+        })
+      ;
+    };
+
+    for (var cmd in argv) {
+      if (m[cmd]) {
+        cli = true;
+        m[cmd](argv[cmd]);
+      }
+    }
+
+    if (!cli) {
+      var r = repl.start(replcfg);
+      
+      for (var key in m) {
+        r.context[key] = m[key];
+      }
+    }
+   });
+});

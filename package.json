@@ -1,0 +1,24 @@
+{
+  "name": "lev",
+  "version": "0.0.1",
+  "description": "commandline and REPL access for leveldb",
+  "main": "index.js",
+  "dependencies": {
+    "levelup": "0.4.4",
+    "optimist": "0.3.4"
+  },
+  "scripts": {
+    "test": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/hij1nx/lev.git"
+  },
+  "keywords": [
+    "leveldb"
+  ],
+  "preferGlobal": true,
+  "author": "hij1nx",
+  "license": "MIT",
+  "readmeFilename": "README.md"
+}

@@ -11,4 +11,10 @@ pids
 logs
 results
 
+*.swp
+*.swo
+
+testdb/*
+node_modules/*
+
 npm-debug.log

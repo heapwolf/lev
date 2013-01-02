@@ -8,9 +8,17 @@ $npm install lev -g
 ```
 
 # Usage
-Use `--format` from the commandline or `format(true)` in the cli for nice(r) output.
+All commands accept the same options as the levelup methods. They also parse
+the parameters to for your convenience, for instance specifying `keys(4)` or
+`lev -k 4` to get the first four keys. These convenience methods are detailed 
+below.
 
 ## As a commandline tool
+
+An example of getting all the keys in the database and printing them to stdout.
+```js
+lev -k 10
+```
 
 ```
 -r --readStream       A readable stream of the full database.
@@ -24,22 +32,24 @@ Use `--format` from the commandline or `format(true)` in the cli for nice(r) out
 -h --help             This help
 ```
 
-Do a range query to stdout (with a limit of 10)
-```js
-lev -r 'foo' 'foobar' -l 10
-```
+### readStream
+Opens a readable stream. accepts `--start`, `--end`, `--limit` and `--reverse`.
 
-Do a verbose put
+### get
 
-```js
-lev --put 'keyname' '{a:10}'
-```
+### put
 
-Print all the keys to stdout (with a limit of 3)
+### del
 
-```js
-lev -k 3
-```
+### keys
+
+### values
+
+### format
+Use `--format` from the commandline or `format(1)` in the cli for nice(r) output.
+
+### help
+
 
 ## As a REPL
 The REPL has autocomplete and suggestions for database keys. First run 
@@ -49,21 +59,6 @@ etc.
 ```bash
 $lev
 >get('keyname')
-```
-
-```
->help()
-
-   pwd()              Locaiton of the current database
-   readStream()       A readable stream of the full database.
-   get()              Fetch data from the store.
-   put()              Insert data into the store.
-   del()              Remove data from the store.
-   keys()             A readable stream of all keys in the database
-   approximateSize()  Approximate number of bytes of file system space used by the given range
-   values()           A readable stream of all values in the database
-   format()           Make nice(r) output to standard out.
-   help()             This help
 ```
 
 # Commands

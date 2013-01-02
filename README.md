@@ -8,6 +8,7 @@ $npm install lev -g
 ```
 
 # Usage
+Use `--format` from the commandline or `format(true)` in the cli for nice(r) output.
 
 ## As a commandline tool
 Do a range query to stdout (with a limit of 10)

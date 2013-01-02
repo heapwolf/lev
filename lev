@@ -75,7 +75,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
 
       db.readStream(opts)
         .on('data', function(data) {
-          if (argv.format) {
+          if (m.formatting || argv.format) {
             output.write('\r\n' + data);
           }
           else {
@@ -102,7 +102,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           output.write(err + '\r\n');
           return cb && cb(err);
         }
-        if (argv.format) {
+        if (m.formatting || argv.format) {
           output.write('\r\n' + value + '\r\n');
         }
         else {
@@ -145,7 +145,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       db.keyStream(opts)
         .on('data', function (data) {
 
-          argv.format
+          (m.formatting || argv.format)
             ? output.write('\r\n' + data)
             : output.write(data)
           ;
@@ -173,7 +173,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
             data = data.substr(0, m.truncate || argv.truncate);
           }
 
-          r.context.format
+          (m.formatting || argv.format)
             ? output.write('\r\n' + data)
             : output.write(data)
           ;
@@ -184,6 +184,12 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
         })
       ;
     };
+
+    m.formatting = false;
+
+    m.format = function(b) {
+      return m.formatting = b;
+    }
 
     for (var cmd in argv) {
       if (m[cmd]) {

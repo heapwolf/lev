@@ -131,7 +131,8 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
             return cb && cb(err);
           }
           if (formatting) {
-            output.write('\r\n' + JSON.parse(value, 2) + '\r\n');
+
+            output.write('\r\n' + value + '\r\n');
             keypress();
           }
           else {

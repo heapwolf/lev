@@ -8,10 +8,11 @@ $npm install lev -g
 ```
 
 # Usage
-All commands are synonymous with the methods in the [levelup][0] libaray with 
-the exception that they also parameters to for your convenience. For instance, 
+All commands are nearly synonymous with the methods in the [levelup][0] libaray.
+The exception is that they will parse parameters to for your convenience. For instance, 
 you can specify `keys(4)` or `lev -k 4` to get the first four keys in the database. 
-These convenience methods are detailed below.
+The parameters accepted on the commandline should be the same as in the javascript 
+methods.
 
 ## As a commandline tool
 
@@ -33,9 +34,28 @@ lev -k 10
 ```
 
 ### readStream
-Opens a readable stream. accepts `--start`, `--end`, `--limit` and `--reverse`.
+Opens a readable stream. 
+
+```bash
+lev -r 'a' 'a~' 4
+```
+
+```bash
+lev -r 'a'
+lev -r 3
+```
+
+
+`--start`
+
+`--end`
+
+`--limit`
+
+`--reverse`.
 
 ### get
+Fetch data from the store. Accepts `--key`, `--end`.
 
 ### put
 
@@ -60,6 +80,5 @@ etc.
 $lev
 >get('keyname')
 ```
-
 
 [0]:https://github.com/rvagg/node-levelup

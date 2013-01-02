@@ -33,44 +33,6 @@ lev -k 10
 -h --help             This help
 ```
 
-### readStream
-Opens a readable stream. 
-
-```bash
-lev -r 'a' 'a~' 4
-```
-
-```bash
-lev -r 'a'
-lev -r 3
-```
-
-
-`--start`
-
-`--end`
-
-`--limit`
-
-`--reverse`.
-
-### get
-Fetch data from the store. Accepts `--key`, `--end`.
-
-### put
-
-### del
-
-### keys
-
-### values
-
-### format
-Use `--format` from the commandline or `format(1)` in the cli for nice(r) output.
-
-### help
-
-
 ## As a REPL
 The REPL has autocomplete and suggestions for database keys. First run 
 `keys()` to create a cache then type `get('...<tab>`, `put('...<tab>`, 

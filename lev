@@ -117,7 +117,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           keypress();
         }
         else {
-          output.write(null, String(value));
+          output.write(String(value));
         }
         cb && cb(null, value);
       });

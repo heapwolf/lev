@@ -8,7 +8,7 @@ $npm install lev -g
 ```
 
 # Usage
-All commands are synonymous with the methods in the `[levelup][0]` libaray with 
+All commands are synonymous with the methods in the [levelup][0] libaray with 
 the exception that they also parameters to for your convenience. For instance, 
 you can specify `keys(4)` or `lev -k 4` to get the first four keys in the database. 
 These convenience methods are detailed below.
@@ -62,3 +62,4 @@ $lev
 ```
 
 
+[0]:https://github.com/rvagg/node-levelup

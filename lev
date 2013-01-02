@@ -51,8 +51,6 @@ fs.stat(path.join('.', 'LOCK'), function(err) {
 
     var m = {};
 
-    m.JSON = !!argv.JSON || true;
-
     m.pwd = function() {
       return location;
     };
@@ -125,6 +123,8 @@ fs.stat(path.join('.', 'LOCK'), function(err) {
       });
     };
 
+    m.g = m.get;
+
     m.put = function(key, value, cb) {
 
       key = key || argv.put;
@@ -144,6 +144,8 @@ fs.stat(path.join('.', 'LOCK'), function(err) {
         return cb && cb();
       });
     };
+
+    m.p = m.put;
 
     m.keys = function(opts) {
 
@@ -167,6 +169,8 @@ fs.stat(path.join('.', 'LOCK'), function(err) {
         })
       ;
     };
+
+    m.k = m.keys;
 
     m.values = function(opts) {
 
@@ -195,6 +199,8 @@ fs.stat(path.join('.', 'LOCK'), function(err) {
         })
       ;
     };
+
+    m.v = m.values;
 
     for (var cmd in argv) {
       if (m[cmd]) {

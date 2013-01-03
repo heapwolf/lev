@@ -6,8 +6,9 @@ var path = require('path');
 var levelup = require('levelup');
 var argv = require('optimist').argv;
 
-var levelcfg = { 
-  createIfMissing: argv.createIfMissing || false, 
+var levelcfg = {
+
+  createIfMissing: argv.createIfMissing || false,
   errorIfExists: argv.errorIfExists || false, 
   compression: argv.compression || true,
   encoding: argv.encoding || 'utf8',
@@ -39,7 +40,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
   var commands = {};
   var formatting;
 
-  if (err && err.errno === 34) {
+  if (levelcfg.createIfMissing === false && err && err.errno === 34) {
     process.stderr.write('error. no leveldb found in this directory (try using `--location`).\r\n');
     process.exit(1);
   }

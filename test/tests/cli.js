@@ -19,6 +19,40 @@ const test_value4 = 'testvalue4';
 
 module.exports = {
 
+  "put to specific location (verbose argument)": function(test, next) {
+
+    test.plan(2);
+
+    var test_cp2 = spawn('lev', ['--put', test_key2, test_value2, '--createIfMissing', '--location', p]);
+    var test_output2 = '';
+
+    test_cp2.stderr.on('data', function (data) {
+      test.fail(data);
+    });
+
+    test_cp2.stdout.on('data', function (data) {
+      test_output2 += data;
+    });
+
+    test_cp2.on('exit', function (data) {
+  
+      test.equals(test_output2, OK);
+
+      levelup(path.join(__dirname, '..', 'fixtures', 'db'), options, function (err, db) {
+        
+        if (err) { return test.fail(err); }
+
+        db.get(test_key2, function (err, value) {
+          
+          if (err) { return test.fail(err); }
+          test.equals(test_value2, value);
+          db.close();
+          next();
+        });
+      });
+    });
+  },
+
   "put to specific location": function(test, next) {
 
     test.plan(2);
@@ -46,40 +80,6 @@ module.exports = {
           
           if (err) { return test.fail(err); }
           test.equals(test_value1, value);
-          db.close();
-          next();
-        });
-      });
-    });
-  },
-
-  "put to specific location (verbose argument)": function(test, next) {
-
-    test.plan(2);
-
-    var test_cp2 = spawn('lev', ['--put', test_key2, test_value2, '--location', p]);
-    var test_output2 = '';
-
-    test_cp2.stderr.on('data', function (data) {
-      test.fail(data);
-    });
-
-    test_cp2.stdout.on('data', function (data) {
-      test_output2 += data;
-    });
-
-    test_cp2.on('exit', function (data) {
-  
-      test.equals(test_output2, OK);
-
-      levelup(path.join(__dirname, '..', 'fixtures', 'db'), options, function (err, db) {
-        
-        if (err) { return test.fail(err); }
-
-        db.get(test_key2, function (err, value) {
-          
-          if (err) { return test.fail(err); }
-          test.equals(test_value2, value);
           db.close();
           next();
         });

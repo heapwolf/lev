@@ -50,7 +50,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
   levelup(location, levelcfg, function(err, db) {
 
     if (err) {
-      return output.write(err);
+      return output.write(String(err));
     }
 
     commands.pwd = {
@@ -97,10 +97,10 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
         db.readStream(opts)
           .on('data', function(data) {
             if (formatting) {
-              output.write('\r\n' + data);
+              output.write(data + '\r\n');
             }
             else {
-              output.write(data);
+              output.write(String(data));
             }
           })
           .on('end', function() { 
@@ -132,7 +132,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           }
           if (formatting) {
 
-            output.write('\r\n' + value + '\r\n');
+            output.write(value + '\r\n');
             keypress();
           }
           else {
@@ -238,7 +238,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
             cachedkeys.push(data);
 
             formatting
-              ? output.write('\r\n' + data)
+              ? output.write(data + '\r\n')
               : output.write(String(data))
             ;
           })
@@ -268,7 +268,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           }
 
           formatting
-            ? output.write('\r\n' + size)
+            ? output.write(size + '\r\n')
             : output.write(String(size))
           ;
         };
@@ -300,7 +300,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
             }
 
             formatting
-              ? output.write('\r\n' + data)
+              ? output.write(data + '\r\n')
               : output.write(String(data))
             ;
           })

@@ -26,21 +26,55 @@ lev -k 10
 -p --put              Insert data into the store.
 -d --del              Remove data from the store.
 -k --keys             A readable stream of all keys in the database
--a --approximateSize  Get the approximate number of bytes of file system space used by the given range
+-a --approximateSize  An approximate number of bytes of used by the given range
 -v --values           A readable stream of all values in the database
 -f --format           Make nice(r) output to standard out.
 -h --help             This help
 ```
 
 ## As a REPL
-The REPL has autocomplete and suggestions for database keys. First run 
-`keys()` to create a cache then type `get('...<tab>`, `put('...<tab>`, 
-etc. 
+The REPL has autocomplete and suggestions for database keys. First run `keys()` 
+to create a cache then type `get('...<tab>`, `put('...<tab>`, 
+etc. It is important to note that most commands are executed async, so it wont 
+be uncommon to see `undefined` printed out as a return value.
 
 ```bash
 $lev
 >get('keyname')
+'{ k: 1 }'
+>
 ```
+
+```
+>help()
+
+   pwd()              Path of the current working database.
+   create()           Return a new instance of leveldb
+   use()              Select the current database to use
+   ls()               list of databases
+   readStream()       A readable stream of the full database.
+   get()              Fetch data from the store.
+   put()              Insert data into the store.
+   del()              Remove data from the store.
+   keys()             A readable stream of all keys in the database
+   approximateSize()  An approximate number of bytes of used by the given range
+   values()           A readable stream of all values in the database
+   format()           Make nice(r) output to standard out.
+   help()             This help
+'OK'
+>ls()
+[ 'test/fixtures/db/',
+  'test/fixtures/foobar' ]
+```
+
+### use([location])
+Specify the leveldb instance to use (provides tab completion just like require).
+
+### ls()
+Get a list of instances (use the `use()` command to add more from the file system).
+
+### keys([start], [end], [limit])
+Get the keys from the current database.
 
 # About LevelDB
 LevelDB is a fast key-value storage engine that provides an ordered mapping 

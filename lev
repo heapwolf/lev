@@ -39,6 +39,9 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
   var location;
   var commands = {};
   var formatting;
+  
+  var silentop;
+  var lastopts;
 
   if (levelcfg.createIfMissing === false && err && err.errno === 34) {
     process.stderr.write('error. no leveldb found in this directory (try using `--location`).\r\n');
@@ -74,20 +77,24 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
         var opts = {};
 
         if (argv.r) {
+
           opts.start = argv.r;
           opts.end = argv._[0] || argv.start + '~';
           opts.limit = argv.limit || argv.l || -1;
           opts.reverse = argv.reverse || false;
         }
         else if (typeof arguments[0] === 'number') {
+
           limit = arguments[0];
           start = undefined;
           end = undefined;
         }
         else if (typeof arguments[0] === 'object') {
+
           opts = arguments[0];
         }
         else {
+
           opts = {
             start: start || argv.start,
             end: (end || argv.end || start + '~'),
@@ -95,8 +102,8 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           };
         }
 
-        db.readStream(opts)
-          .on('data', function(data) {
+        db.readStream(opts).on('data', function(data) {
+
             if (formatting) {
               output.write(data + '\r\n');
             }
@@ -105,6 +112,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
             }
           })
           .on('end', function() { 
+
             keypress();
           })
         ;
@@ -160,10 +168,15 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
         }
 
         db.put(key, value, function(err) {
+
           if (err) {
             output.write(err + '\r\n');
             return cb && cb(err);
           }
+
+          silentop = true;
+          commands.keys.method(lastopts);
+
           output.write('OK\r\n');
           keypress();
           return cb && cb(null);
@@ -189,6 +202,10 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           if (err) {
             return cb && cb(err);
           }
+          
+          silentop = true;
+          commands.keys.method(lastopts);
+
           output.write('OK\r\n');
           keypress();
           return cb && cb(null);
@@ -233,10 +250,16 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           }
         }
 
+        lastopts = opts;
+
         db.keyStream(opts)
           .on('data', function (data) {
 
             cachedkeys.push(data);
+
+            if (silentop) { 
+              return silent = false; 
+            }
 
             formatting
               ? output.write(data + '\r\n')
@@ -244,7 +267,10 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
             ;
           })
           .on('end', function() {
-            output.write('\r\n');
+
+            if (silentop) { 
+              return silent = false; 
+            }
             keypress();
           })
         ;
@@ -306,7 +332,6 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
             ;
           })
           .on('end', function() {
-            output.write('\r\n');
             keypress();
           })
         ;

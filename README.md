@@ -76,6 +76,27 @@ Get a list of instances (use the `use()` command to add more from the file syste
 ### keys([start], [end], [limit])
 Get the keys from the current database.
 
+
+# Default Configuration
+You can create a `.lev` file in your home directory and it will be used to set the 
+defaults. Command line arguments will override the default settings in this file.
+
+```json
+{
+  "format": true,
+  "level": {
+    "createIfMissing": true,
+    "encoding": true
+  }
+}
+```
+
+### format 
+Expects a `boolean` value indicating if formatting should be used or not.
+
+### level
+Settings that are passed to the leveldb constructor (see [these][0] docs).
+
 # About LevelDB
 LevelDB is a fast key-value storage engine that provides an ordered mapping 
 from string keys to string values. It manages compression and caching of hot

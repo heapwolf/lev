@@ -3,22 +3,50 @@
 var repl = require('repl');
 var fs = require('fs');
 var path = require('path');
+var http = require('http');
+var net = require('net');
+
 var levelup = require('levelup');
 var argv = require('optimist').argv;
 
-var levelcfg = {
+var levelcfg = {}, replcfg = {};
+var formatting, httpserver, tcpserver;
 
-  createIfMissing: argv.createIfMissing || false,
-  errorIfExists: argv.errorIfExists || false, 
-  compression: argv.compression || true,
-  encoding: argv.encoding || 'utf8',
-  keyEncoding: argv.keyEncoding || 'utf8',
-};
+try {
 
-var replcfg = {
+  var defaults = JSON.parse(fs.readFileSync(path.join(process.env['HOME'], '.lev'))) || {};
+
+  formatting = defaults.format;
+
+  levelcfg.createIfMissing = defaults.level.createIfMissing;
+  levelcfg.errorIfExists = defaults.level.errorIfExists;
+  levelcfg.compression = defaults.level.compression;
+  levelcfg.encoding = defaults.level.encoding;
+  levelcfg.keyEncoding = defaults.level.encoding;
+}
+catch(ex) {
+  if (ex.name === 'SyntaxError') {
+    console.log('error parsing settings file [%s]', ex.message);
+  }
+}
+
+//
+// take the value from the config file, if none take the cli argument else use default.
+//
+levelcfg.createIfMissing = levelcfg.createIfMissing || argv.createIfMissing || argv.c || false;
+levelcfg.errorIfExists = levelcfg.errorIfExists || argv.errorIfExists || false;
+levelcfg.compression = levelcfg.compression || argv.compression || true;
+levelcfg.encoding = levelcfg.encoding || argv.encoding || 'utf8';
+levelcfg.keyEncoding = levelcfg.keyEncoding || argv.keyEncoding || 'utf8';
+
+replcfg = {
   prompt: '>',
   input: process.stdin,
   output: process.stdout
+};
+
+var write = function(d) {
+  replcfg.output.write(d);
 };
 
 var keypress = function keypress() {
@@ -29,8 +57,6 @@ var escapeRegExp = function escapeRegExp(str) {
   return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 };
 
-var output = replcfg.output;
-var input = replcfg.input;
 
 var cachedkeys = [];
 var databases = {};
@@ -40,13 +66,12 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
 
   var location;
   var commands = {};
-  var formatting;
   
   var silentop;
   var lastopts;
 
   if (levelcfg.createIfMissing === false && err && err.errno === 34) {
-    process.stderr.write('error. no leveldb found in this directory (try using `--location`).\r\n');
+    write('no leveldb found in this directory (specify a directory with `--location <dir>` or use `-c` to create).\r\n');
     process.exit(1);
   }
   else {
@@ -58,12 +83,13 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
     databases[location] = db;
 
     if (err) {
-      return output.write(String(err));
+      return write(String(err));
     }
 
     commands.pwd = {
 
       description: 'Path of the current working database',
+      usage: [''],
       cli: false,
       method: function() {
         return location;
@@ -157,10 +183,10 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
         db.readStream(opts).on('data', function(data) {
 
             if (formatting) {
-              output.write(data + '\r\n');
+              write(data + '\r\n');
             }
             else {
-              output.write(String(data));
+              write(String(data));
             }
           })
           .on('end', function() { 
@@ -188,17 +214,17 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
         db.get(key, function(err, value) {
 
           if (err) {
-            output.write(err + '\r\n');
+            write(err + '\r\n');
             return cb && cb(err);
           }
           if (formatting) {
 
-            output.write(value + '\r\n');
+            write(value + '\r\n');
             keypress();
             return 'OK';
           }
           else {
-            output.write(String(value));
+            write(String(value));
           }
           cb && cb(null, value);
         });
@@ -223,14 +249,14 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
         db.put(key, value, function(err) {
 
           if (err) {
-            output.write(err + '\r\n');
+            write(err + '\r\n');
             return cb && cb(err);
           }
 
           silentop = true;
           commands.keys.method(lastopts);
 
-          output.write('OK\r\n');
+          write('OK\r\n');
           keypress();
           return cb && cb(null);
         });
@@ -259,7 +285,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           silentop = true;
           commands.keys.method(lastopts);
 
-          output.write('OK\r\n');
+          write('OK\r\n');
           keypress();
           return cb && cb(null);
         });
@@ -315,8 +341,8 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
             }
 
             formatting
-              ? output.write(data + '\r\n')
-              : output.write(String(data))
+              ? write(data + '\r\n')
+              : write(String(data))
             ;
           })
           .on('end', function() {
@@ -345,12 +371,12 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
         callback = callback || function (err, size) { 
 
           if (err) {
-            return output.write(err);
+            return write(err);
           }
 
           formatting
-            ? output.write(size + '\r\n')
-            : output.write(String(size))
+            ? write(size + '\r\n')
+            : write(String(size))
           ;
         };
 
@@ -381,8 +407,8 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
             }
 
             formatting
-              ? output.write(data + '\r\n')
-              : output.write(String(data))
+              ? write(data + '\r\n')
+              : write(String(data))
             ;
           })
           .on('end', function() {
@@ -409,10 +435,10 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       cli: true,
       method: function(method) {
 
-        output.write('\r\n');
+        write('\r\n');
 
         if (method) {
-          output.write(commands[method].usage.join('\r\n'));
+          write(commands[method].usage.join('\r\n'));
         }
 
         //
@@ -457,7 +483,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           ].join(' '));
         }
 
-        output.write(help.join('\r\n') + '\r\n');
+        write(help.join('\r\n') + '\r\n');
         return OK;
       }
     };

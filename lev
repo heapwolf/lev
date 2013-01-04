@@ -50,7 +50,7 @@ var write = function(d) {
 };
 
 var keypress = function keypress() {
-  input.emit('keypress', '\r', { name: 'enter', ctrl: false, meta: false, shift: false });
+  replcfg.input.emit('keypress', '\r', { name: 'enter', ctrl: false, meta: false, shift: false });
 };
 
 var escapeRegExp = function escapeRegExp(str) {

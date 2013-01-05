@@ -5,8 +5,7 @@ var test = require('tap').test;
 var p = path.join(__dirname, '..', 'fixtures', 'db');
 
 var options = {};
-var OK = 'OK\r\n';
-
+var OK = 'OK';
 
 const test_key1 = 'testkey1';
 const test_value1 = 'testvalue1';
@@ -17,13 +16,23 @@ const test_value3 = 'testvalue3';
 const test_key4 = 'testkey4';
 const test_value4 = 'testvalue4';
 
+//
+// force some defaults in case user as a `.lev` file in their home directory.
+//
+var defaultargs = ['--format', 'false', '--utf8'];
+
 module.exports = {
 
   "put to specific location (verbose argument)": function(test, next) {
 
     test.plan(2);
 
-    var test_cp2 = spawn('lev', ['--put', test_key2, test_value2, '--createIfMissing', '--location', p]);
+    //
+    // for the first test, create the database in case it does not exist.
+    //
+    var args = ['--put', test_key2, test_value2, '--c', '--location', p].concat(defaultargs);
+
+    var test_cp2 = spawn('lev', args);
     var test_output2 = '';
 
     test_cp2.stderr.on('data', function (data) {
@@ -57,7 +66,9 @@ module.exports = {
 
     test.plan(2);
 
-    var test_cp1 = spawn('lev', ['-p', test_key1, test_value1, '--location', p]);
+    var args = ['-p', test_key1, test_value1, '--location', p].concat(defaultargs);
+
+    var test_cp1 = spawn('lev', args);
     var test_output1 = '';
 
     test_cp1.stderr.on('data', function (data) {
@@ -91,7 +102,9 @@ module.exports = {
 
     test.plan(2);
 
-    var test_cp3 = spawn('lev', ['-p', test_key3, test_value3], { cwd: p });
+    var args = ['-p', test_key3, test_value3, '--location', p].concat(defaultargs);
+
+    var test_cp3 = spawn('lev', args, { cwd: p });
     var test_output3 = '';
 
     test_cp3.stderr.on('data', function (data) {
@@ -125,7 +138,9 @@ module.exports = {
 
     test.plan(2);
 
-    var test_cp4 = spawn('lev', ['-p', test_key4, test_value4], { cwd: p });
+    var args = ['-p', test_key4, test_value4, '--location', p].concat(defaultargs);
+
+    var test_cp4 = spawn('lev', args, { cwd: p });
     var test_output4 = '';
 
     test_cp4.stderr.on('data', function (data) {
@@ -159,7 +174,9 @@ module.exports = {
 
     test.plan(1);
 
-    var test_cp1 = spawn('lev', ['-g', test_key1, '--location', p]);
+    var args = ['-g', test_key1, '--location', p].concat(defaultargs);
+
+    var test_cp1 = spawn('lev', args);
     var test_output1 = '';
 
     test_cp1.stderr.on('data', function (data) {
@@ -180,7 +197,9 @@ module.exports = {
 
     test.plan(1);
 
-    var test_cp2 = spawn('lev', ['--get', test_key2, '--location', p]);
+    var args = ['--get', test_key2, '--location', p].concat(defaultargs);
+
+    var test_cp2 = spawn('lev', args);
     var test_output2 = '';
 
     test_cp2.stderr.on('data', function (data) {
@@ -201,7 +220,9 @@ module.exports = {
 
     test.plan(2);
 
-    var test_cp3 = spawn('lev', ['-d', test_key3], { cwd: p });
+    var args = ['-d', test_key3].concat(defaultargs);
+
+    var test_cp3 = spawn('lev', args, { cwd: p });
     var test_output3 = '';
 
     test_cp3.stderr.on('data', function (data) {
@@ -235,5 +256,4 @@ module.exports = {
       });
     });
   }
-
 };

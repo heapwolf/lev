@@ -10,8 +10,12 @@ var levelup = require('levelup');
 
 var argv = require('optimist').argv;
 
-var levelcfg = {}, replcfg = {};
-var formatting, httpserver, tcpserver;
+var levelcfg = {}; 
+var replcfg = {};
+var r; // repl instance.
+var formatting;
+var httpserver; 
+var tcpserver;
 
 try {
 
@@ -57,10 +61,6 @@ replcfg = {
 
 var write = function(d) {
   replcfg.output.write(d);
-};
-
-var emitkeypress = function emitkeypress() {
-  replcfg.input.emit('keypress', '\r', { name: 'enter', ctrl: false, meta: false, shift: false });
 };
 
 var escapeRegExp = function escapeRegExp(str) {
@@ -154,7 +154,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
 
         db.close(function(err) {
           write((err || 'OK') + '\r\n');
-          emitkeypress();
+          r.displayPrompt();
         });
 
         return 'Closing...';
@@ -170,7 +170,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
 
         db.open(function(err) {
           write((!err ? 'OK' : err) + '\r\n');
-          emitkeypress();
+          r.displayPrompt();
         });
         return 'Opening...';
       }
@@ -249,25 +249,18 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
 
         db.readStream(opts).on('data', function(data) {
 
-          if (formatting) {
-
-            if (levelcfg.encoding === 'json') {
-
-              write(JSON.stringify(data, true, 2));
-            }
-            else {
-              
-              write(data + '\r\n');
-            }
+          if (levelcfg.encoding === 'json') {
+            data = JSON.stringify(data, true, 2);
           }
           else {
-            
-            write(String(data));
+            data = String(data);
           }
+
+          write(formatting ? data + '\r\n' : data);
         })
         .on('end', function() { 
 
-          emitkeypress();
+          r.displayPrompt();
         })
         ;
       }
@@ -296,20 +289,16 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
             return cb && cb(err);
           }
 
-          if (formatting) {
-
-            if (levelcfg.encoding === 'json') {
-              write(JSON.stringify(data, true, 2));
-            }
-            else {
-              write(data + '\r\n');
-            }
-            
-            emitkeypress();
+          if (levelcfg.encoding === 'json') {
+            data = JSON.stringify(data, true, 2);
           }
           else {
-            write(String(data));
+            data = String(data);
           }
+
+          write(formatting ? data + '\r\n' : data);
+          r.displayPrompt();
+
           cb && cb(null, data);
         });
       }
@@ -343,7 +332,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           commands.keys.method(lastopts);
 
           write(formatting ? 'OK\r\n' : 'OK');
-          emitkeypress();
+          r.displayPrompt();
           return cb && cb(null);
         });
       }
@@ -372,7 +361,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           commands.keys.method(lastopts);
 
           write(formatting ? 'OK\r\n' : 'OK');
-          emitkeypress();
+          r.displayPrompt();
           return cb && cb(null);
         });
       }
@@ -426,25 +415,21 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
               return silent = false; 
             }
 
-            if (formatting) {
-
-              if (levelcfg.encoding === 'json') {
-                write(JSON.stringify(data, true, 2));
-              }
-              else {
-                write(data + '\r\n');
-              }
+            if (levelcfg.encoding === 'json') {
+              data = JSON.stringify(data, true, 2);
             }
             else {
-              write(String(data));
+              data = String(data);
             }
+
+            write(formatting ? data + '\r\n' : data);
           })
           .on('end', function() {
 
             if (silentop) { 
               return silent = false; 
             }
-            emitkeypress();
+            r.displayPrompt();
           })
         ;
 
@@ -469,7 +454,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           }
 
           write(formatting ? size + '\r\n' : String(size));
-          emitkeypress();
+          r.displayPrompt();
         };
 
         db.approximateSize(start, end, callback);
@@ -484,25 +469,49 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       cli: true,
       method: function(opts) {
 
-        if (argv.limit || argv.l) {
-          opts = { limit: argv.limit || argv.l };
-        }
-        else if (typeof opts === 'number') {
+        if (typeof opts === 'number') {
           opts = { limit: opts };
+        }
+        else if (typeof opts === 'string') {
+          opts = {
+            start: opts,
+            end: arguments[1] || opts + '~',
+            limit: arguments[2] || -1
+          }
+        }
+        else if (argv.v) {
+
+          var opts = {};
+
+          if (typeof argv.v === 'number') {
+            opts.limit = argv.v;
+          }
+          else {
+            opts.start = argv.v;
+            opts.end = argv._[0] || opts.start + '~';
+            opts.limit = argv._[1] || -1;
+          }
         }
 
         db.valueStream(opts)
           .on('data', function (data) {
 
-            if (truncate > -1 || (argv.tuncate && argv.truncate > -1)) {
-              data = data.substr(0, truncate || argv.truncate);
+            // if (truncate > -1 || (argv.tuncate && argv.truncate > -1)) {
+            //   data = data.substr(0, truncate || argv.truncate);
+            // }
+
+            if (levelcfg.encoding === 'json') {
+              data = JSON.stringify(data, true, 2);
+            }
+            else {
+              data = String(data);
             }
 
-            write(formatting ? data + '\r\n' : String(data));
+            write(formatting ? data + '\r\n' : data);
           })
           .on('end', function() {
             
-            emitkeypress();
+            r.displayPrompt();
           })
         ;
       }
@@ -526,8 +535,10 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
         else if (argv.format === 'false' || argv.f === 'false') {
           return formatting = false;
         }
-        
-        return formatting = argv.format || argv.f;
+        else if (argv.format || argv.f) {
+          return formatting = true;
+        }
+        return formatting;
       }
     };
 
@@ -619,7 +630,8 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
     }
 
     if (!cliop) {
-      var r = repl.start(replcfg);
+      
+      r = repl.start(replcfg);
       
       for (var command in commands) {
         r.context[command] = commands[command].method;

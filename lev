@@ -5,9 +5,9 @@ var fs = require('fs');
 var path = require('path');
 var http = require('http');
 var net = require('net');
+var readline = require('readline');
 
 var levelup = require('levelup');
-
 var argv = require('optimist').argv;
 
 var levelcfg = {}; 
@@ -36,7 +36,7 @@ catch(ex) {
 }
 
 //
-// take the value from the config file, if none take the cli argument else use default.
+// take the take the cli argument, else the config file value, if none  use a default.
 //
 levelcfg.createIfMissing = argv.c || argv.createIfMissing || levelcfg.createIfMissing || false;
 levelcfg.errorIfExists = argv.errorIfExists || levelcfg.errorIfExists || false;
@@ -78,7 +78,6 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
   var commands = {};
   
   var silentop;
-  var lastopts;
 
   if (levelcfg.createIfMissing === false && err && err.errno === 34) {
     write('no leveldb found in this directory (specify a directory with `--location <dir>` or use `-c` to create).\r\n');
@@ -117,6 +116,21 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       cleanup();
       process.exit(1);
     });
+
+    commands.setEncoding = {
+
+      description: 'Set the encoding type',
+      usage: [''],
+      cli: false,
+      method: function(encoding, includeKeys) {
+
+        levelcfg.encoding = encoding || 'utf8';
+
+        if (includeKeys) {
+          levelcfg.keyEncoding = encoding || 'utf8';
+        }
+      }
+    };
 
     commands.pwd = {
 
@@ -219,8 +233,14 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       cli: true,
       method: function(start, end, limit) {
 
-        var opts = {};
+        cachedkeys = [];
 
+        var opts = {};
+        var quiet = false;
+
+        //
+        // the options may be specified from the cli.
+        //
         if (argv.r) {
 
           opts.start = argv.r;
@@ -228,26 +248,50 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           opts.limit = argv.limit || argv.l || -1;
           opts.reverse = argv.reverse || false;
         }
-        else if (typeof arguments[0] === 'number') {
-
-          limit = arguments[0];
-          start = undefined;
-          end = undefined;
+        else if (typeof arguments[0] === 'boolean') {
+          opts.values = false;
+          quiet = true;
         }
-        else if (typeof arguments[0] === 'object') {
 
+        //
+        // the first argument may be the limit
+        //
+        else if (typeof arguments[0] === 'number') {
+          opts.limit = arguments[0];
+        }
+
+        //
+        // the first argument may be an options object.
+        //
+        else if (typeof arguments[0] === 'object') {
           opts = arguments[0];
         }
+
+        //
+        // the options may be as specified in the method's signature
+        //
         else {
 
-          opts = {
-            start: start || argv.start,
-            end: (end || argv.end || start + '~'),
-            limit: (limit || argv.limit || 80)
-          };
+          if (start || argv.start) {
+            opts.start = start || argv.start;
+          }
+
+          if (end || argv.end) {
+            opts.end = end || argv.end || start + '~';
+          }
+        }
+
+        if (typeof opts.limit === 'undefined' && !quiet) {
+          return write(
+            'Result set may be quite large, consider specifying a limit\r\n'
+          );
         }
 
         db.readStream(opts).on('data', function(data) {
+
+          if (!data.key && !data.value) {
+            cachedkeys.push(data);
+          }
 
           if (levelcfg.encoding === 'json') {
             data = JSON.stringify(data, true, 2);
@@ -256,13 +300,74 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
             data = String(data);
           }
 
-          write(formatting ? data + '\r\n' : data);
+          if(!quiet) {
+            write(formatting ? data + '\r\n' : data);
+          }
         })
         .on('end', function() { 
-
           r.displayPrompt();
-        })
-        ;
+        });
+      }
+    };
+
+    //
+    // key and value methods parse their args the same way.
+    //
+    function keyValArgsParse(opts) {
+
+      if (typeof opts === 'number') {
+        opts = { limit: opts };
+      }
+      else if (typeof opts === 'string') {
+        opts = {
+          start: opts,
+          end: arguments[1] || opts + '~',
+          limit: arguments[2] || -1
+        }
+      }
+      else if (argv.k) {
+
+        if (typeof argv.k === 'number') {
+          opts.limit = argv.k;
+        }
+        else {
+          opts.start = argv.k;
+          opts.end = argv._[0] || opts.start + '~';
+          opts.limit = argv._[1] || -1;
+        }
+      }
+      return opts || {};
+    }
+
+    commands.keys = {
+      
+      description: 'A readable stream of all keys in the database',
+      usage: [''],
+      shorthand: 'k',
+      cli: true,
+      method: function(opts) {
+
+        opts = keyValArgsParse(opts);
+        opts.values = false;
+        opts.keys = true;
+
+        commands.readStream.method(opts);
+      }
+    };
+
+    commands.values = {
+
+      description: 'A readable stream of all values in the database',
+      usage: [''],
+      shorthand: 'v',
+      cli: true,
+      method: function(opts) {
+
+        opts = keyValArgsParse(opts);
+        opts.keys = false;
+        opts.values = true;
+
+        commands.readStream.method(opts);
       }
     };
 
@@ -276,7 +381,9 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
 
         key = key || argv.get || argv.g;
 
-        key = key.replace(/\r\n/g, '');
+        if (typeof key === 'string') {
+          key = key.replace(/\r\n/g, '');
+        }
 
         if (!key) { 
           return new Error('missing argument'); 
@@ -315,7 +422,9 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
         key = key || argv.put || argv.p;
         value = value || argv._[0];
 
-        value = value.replace(/\r\n/g, '');
+        if (typeof value === 'string') {
+          value = value.replace(/\r\n/g, '');
+        }
 
         if (!key) { 
           return new Error('missing argument'); 
@@ -328,11 +437,14 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
             return cb && cb(err);
           }
 
-          silentop = true;
-          commands.keys.method(lastopts);
-
           write(formatting ? 'OK\r\n' : 'OK');
           r.displayPrompt();
+          
+          //
+          // refresh the cached keys.
+          //
+          commands.readStream.method(true);
+
           return cb && cb(null);
         });
       }
@@ -358,81 +470,16 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           }
           
           silentop = true;
-          commands.keys.method(lastopts);
 
           write(formatting ? 'OK\r\n' : 'OK');
           r.displayPrompt();
+
+          //
+          // refresh the cached keys.
+          //
+          commands.readStream.method(true);
           return cb && cb(null);
         });
-      }
-    };
-
-    commands.keys = {
-      
-      description: 'A readable stream of all keys in the database',
-      usage: [''],
-      shorthand: 'k',
-      cli: true,
-      method: function(opts) {
-
-        //
-        // TODO: should only cache if this is in the repl.
-        //
-        cachedkeys = [];
- 
-        if (typeof opts === 'number') {
-          opts = { limit: opts };
-        }
-        else if (typeof opts === 'string') {
-          opts = {
-            start: opts,
-            end: arguments[1] || opts + '~',
-            limit: arguments[2] || -1
-          }
-        }
-        else if (argv.k) {
-
-          var opts = {};
-
-          if (typeof argv.k === 'number') {
-            opts.limit = argv.k;
-          }
-          else {
-            opts.start = argv.k;
-            opts.end = argv._[0] || opts.start + '~';
-            opts.limit = argv._[1] || -1;
-          }
-        }
-
-        lastopts = opts;
-
-        db.keyStream(opts)
-          .on('data', function (data) {
-
-            cachedkeys.push(data);
-
-            if (silentop) { 
-              return silent = false; 
-            }
-
-            if (levelcfg.encoding === 'json') {
-              data = JSON.stringify(data, true, 2);
-            }
-            else {
-              data = String(data);
-            }
-
-            write(formatting ? data + '\r\n' : data);
-          })
-          .on('end', function() {
-
-            if (silentop) { 
-              return silent = false; 
-            }
-            r.displayPrompt();
-          })
-        ;
-
       }
     };
 
@@ -458,62 +505,6 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
         };
 
         db.approximateSize(start, end, callback);
-      }
-    };
-
-    commands.values = {
-
-      description: 'A readable stream of all values in the database',
-      usage: [''],
-      shorthand: 'v',
-      cli: true,
-      method: function(opts) {
-
-        if (typeof opts === 'number') {
-          opts = { limit: opts };
-        }
-        else if (typeof opts === 'string') {
-          opts = {
-            start: opts,
-            end: arguments[1] || opts + '~',
-            limit: arguments[2] || -1
-          }
-        }
-        else if (argv.v) {
-
-          var opts = {};
-
-          if (typeof argv.v === 'number') {
-            opts.limit = argv.v;
-          }
-          else {
-            opts.start = argv.v;
-            opts.end = argv._[0] || opts.start + '~';
-            opts.limit = argv._[1] || -1;
-          }
-        }
-
-        db.valueStream(opts)
-          .on('data', function (data) {
-
-            // if (truncate > -1 || (argv.tuncate && argv.truncate > -1)) {
-            //   data = data.substr(0, truncate || argv.truncate);
-            // }
-
-            if (levelcfg.encoding === 'json') {
-              data = JSON.stringify(data, true, 2);
-            }
-            else {
-              data = String(data);
-            }
-
-            write(formatting ? data + '\r\n' : data);
-          })
-          .on('end', function() {
-            
-            r.displayPrompt();
-          })
-        ;
       }
     };
 
@@ -652,6 +643,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
         }
 
         else if (match) {
+
           if (cachedkeys.length === 0) {
             callback(null, [[], '']);
           }

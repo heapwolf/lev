@@ -5,7 +5,7 @@
   "description": "commandline and REPL access for leveldb",
   "main": "lev",
   "dependencies": {
-    "levelup": "0.4.4",
+    "levelup": "0.6.0",
     "optimist": "0.3.4"
   },
   "devDependencies": {

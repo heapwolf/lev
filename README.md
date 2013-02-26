@@ -86,9 +86,10 @@ defaults. Command line arguments will override the default settings in this file
   "format": true,
   "level": {
     "createIfMissing": true,
-    "encoding": true
+    "encoding": "json"
   }
 }
+
 ```
 
 ### format 
@@ -98,6 +99,8 @@ Expects a `boolean` value indicating if formatting should be used or not.
 Settings that are passed to the leveldb constructor (see [these][0] docs).
 
 # About LevelDB
+To lean more about leveldb's files and their formats go [here][2].
+
 LevelDB is a fast key-value storage engine that provides an ordered mapping 
 from string keys to string values. It manages compression and caching of hot
 data.
@@ -121,4 +124,4 @@ updated efficiently.
 
 [0]:https://github.com/rvagg/node-levelup
 [1]:http://leveldb.googlecode.com/svn/trunk/doc/benchmark.html
-
+[2]:http://leveldb.googlecode.com/svn/trunk/doc/impl.html

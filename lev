@@ -255,7 +255,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
         //
         // the first argument may be the limit
         //
-        else if (typeof arguments[0] === 'number') {
+        else if (typeof arguments[0] === 'number' && arguments[0] !== -1) {
           opts.limit = arguments[0];
         }
 
@@ -282,7 +282,8 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
 
         if (typeof opts.limit === 'undefined' && quiet === false) {
           return write(
-            'Result set may be quite large, consider specifying a limit\r\n'
+            'Result set may be quite large.\r\n' +
+            'Consider specifying a limit or `-1` for all items.\r\n'
           );
         }
 

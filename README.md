@@ -7,15 +7,13 @@ $npm install lev -g
 ```
 
 # Usage
-All commands are nearly synonymous with the methods in the [levelup][0] libaray.
-The exception is that they will parse parameters to for your convenience. For instance, 
-you can specify `keys(4)` or `lev -k 4` to get the first four keys in the database. 
-The parameters accepted on the commandline should be the same as in the javascript 
-methods.
+You can use `keys(4)` from the REPL or `lev -k 4` from the CLI to get the first 
+four keys in the database. The parameters accepted on the commandline should be 
+the same as in the javascript methods.
 
 ## As a commandline tool
 
-An example of getting all the keys in the database and printing them to stdout.
+An example of getting the first 10 keys in the database and printing them out.
 ```js
 lev -k 10
 ```

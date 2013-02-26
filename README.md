@@ -39,7 +39,7 @@ etc. It is important to note that most commands are executed async, so it wont
 be uncommon to see `undefined` printed out as a return value.
 
 ```bash
-$lev
+$lev /path/to/database
 >get('keyname')
 '{ k: 1 }'
 >

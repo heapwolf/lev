@@ -72,6 +72,10 @@ var cachedkeys = [];
 var databases = {};
 var OK = 'OK';
 
+if (argv._) {
+  argv.location = argv._[0];
+}
+
 fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
 
   var location;
@@ -117,18 +121,13 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       process.exit(1);
     });
 
-    commands.setEncoding = {
+    commands.config = {
 
-      description: 'Set the encoding type',
+      description: 'Get the current configuration object',
       usage: [''],
       cli: false,
       method: function(encoding, includeKeys) {
-
-        levelcfg.encoding = encoding || 'utf8';
-
-        if (includeKeys) {
-          levelcfg.keyEncoding = encoding || 'utf8';
-        }
+        return levelcfg;
       }
     };
 
@@ -277,11 +276,11 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           }
 
           if (end || argv.end) {
-            opts.end = end || argv.end || start + '~';
+            opts.end = end || argv.end || opts.start + '~';
           }
         }
 
-        if (typeof opts.limit === 'undefined' && !quiet) {
+        if (typeof opts.limit === 'undefined' && quiet === false) {
           return write(
             'Result set may be quite large, consider specifying a limit\r\n'
           );
@@ -289,8 +288,8 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
 
         db.readStream(opts).on('data', function(data) {
 
-          if (!data.key && !data.value) {
-            cachedkeys.push(data);
+          if (!data.key && !data.value || data.key) {
+            cachedkeys.push(data.key || data);
           }
 
           if (levelcfg.encoding === 'json') {
@@ -300,12 +299,14 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
             data = String(data);
           }
 
-          if(!quiet) {
+          if(quiet === false) {
             write(formatting ? data + '\r\n' : data);
           }
         })
         .on('end', function() { 
-          r.displayPrompt();
+          if (r) {
+            r.displayPrompt();
+          }
         });
       }
     };
@@ -314,6 +315,10 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
     // key and value methods parse their args the same way.
     //
     function keyValArgsParse(opts) {
+
+      opts = opts || {};
+
+      var cliargs = argv.k || argv.keys || argv.v || argv.value;
 
       if (typeof opts === 'number') {
         opts = { limit: opts };
@@ -325,12 +330,13 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           limit: arguments[2] || -1
         }
       }
-      else if (argv.k) {
+      else if (cliargs) {
 
-        if (typeof argv.k === 'number') {
-          opts.limit = argv.k;
+        if (typeof cliargs === 'number') {
+          opts.limit = cliargs;
         }
         else {
+
           opts.start = argv.k;
           opts.end = argv._[0] || opts.start + '~';
           opts.limit = argv._[1] || -1;
@@ -350,6 +356,8 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
         opts = keyValArgsParse(opts);
         opts.values = false;
         opts.keys = true;
+
+
 
         commands.readStream.method(opts);
       }
@@ -404,9 +412,11 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           }
 
           write(formatting ? data + '\r\n' : data);
-          r.displayPrompt();
-
-          cb && cb(null, data);
+          
+          if (r) {
+            r.displayPrompt();
+            cb && cb(null, data);            
+          }
         });
       }
     };
@@ -438,14 +448,17 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           }
 
           write(formatting ? 'OK\r\n' : 'OK');
-          r.displayPrompt();
-          
-          //
-          // refresh the cached keys.
-          //
-          commands.readStream.method(true);
 
-          return cb && cb(null);
+          if (r) {
+            r.displayPrompt();
+            
+            //
+            // refresh the cached keys.
+            //
+            commands.readStream.method(true);
+
+            return cb && cb(null);          
+          }
         });
       }
     };
@@ -468,17 +481,18 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           if (err) {
             return cb && cb(err);
           }
-          
-          silentop = true;
 
           write(formatting ? 'OK\r\n' : 'OK');
-          r.displayPrompt();
+          
+          if (r) {
+            r.displayPrompt();
 
-          //
-          // refresh the cached keys.
-          //
-          commands.readStream.method(true);
-          return cb && cb(null);
+            //
+            // refresh the cached keys.
+            //
+            commands.readStream.method(true);
+            return cb && cb(null);            
+          }
         });
       }
     };
@@ -494,15 +508,20 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
         start = start || argv._[0] || ' ';
         end = end || argv._[1] || '~';
 
-        callback = callback || function (err, size) { 
+        if (!callback) {
+          callback = function (err, size) { 
 
-          if (err) {
-            return write(err);
-          }
+            if (err) {
+              return write(err);
+            }
 
-          write(formatting ? size + '\r\n' : String(size));
-          r.displayPrompt();
-        };
+            write(formatting ? size + '\r\n' : String(size));
+            
+            if (r) {
+              r.displayPrompt();
+            }
+          };
+        }
 
         db.approximateSize(start, end, callback);
       }

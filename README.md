@@ -28,12 +28,15 @@ lev path/to/db -k 10
 
 ## REPL
 The REPL has autocomplete and suggestions for database keys. Type 
-`get('...<tab>`, `put('...<tab>`, etc. 
+`get('...<tab>`, `put('...<tab>`, etc. Because some databases can be extremely
+large, you must specify a value when doing operations that stream data. If you
+are absolutely sure you want everything you can specify `-1` as a value.
 
 ```bash
 >lev test/fixtures/db/
->read(-1)
->[
+>read(2)
+>
+[
   {
     "key": "foo",
     "value": "bar"
@@ -68,23 +71,12 @@ The REPL has autocomplete and suggestions for database keys. Type
 >
 ```
 
-### use([location])
-Specify the leveldb instance to use (provides tab completion just like require).
-
-### ls()
-Get a list of instances (use the `use()` command to add more from the file system).
-
-### keys([start], [end], [limit])
-Get the keys from the current database.
-
-
 # Default Configuration
 You can create a `.lev` file in your home directory and it will be used to set the 
 defaults. Command line arguments will override the default settings in this file.
 
 ```json
 {
-  "format": true,
   "level": {
     "createIfMissing": true,
     "encoding": "json"

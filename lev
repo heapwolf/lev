@@ -309,7 +309,7 @@ function lev(db) {
       //
       // the options may be as specified in the method's signature
       //
-      else {
+      else if (start !== -1) {
 
         if (start || argv.start) {
           opts.start = start || argv.start;

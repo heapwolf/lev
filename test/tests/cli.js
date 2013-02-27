@@ -5,7 +5,7 @@ var test = require('tap').test;
 var p = path.join(__dirname, '..', 'fixtures', 'db');
 
 var options = {};
-var OK = 'OK\r\n';
+var OK = '\r\nOK\r\n';
 
 const test_key1 = 'testkey1';
 const test_value1 = 'testvalue1';
@@ -189,7 +189,7 @@ module.exports = {
 
     test_cp1.on('exit', function (data) {
 
-      test.equals(test_output1, test_value1 + '\r\n');
+      test.equals(test_output1, '\r\n' + test_value1 + '\r\n');
     });
   },
 
@@ -212,7 +212,7 @@ module.exports = {
 
     test_cp2.on('exit', function (data) {
   
-      test.equals(test_output2, test_value2 + '\r\n');
+      test.equals(test_output2, '\r\n' + test_value2 + '\r\n');
     });
   },
 

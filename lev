@@ -14,15 +14,12 @@ var argv = require('optimist').argv;
 var levelcfg = {}; 
 var replcfg = {};
 var r; // repl instance.
-var formatting;
 var httpserver; 
 var tcpserver;
 
 try {
 
   var defaults = JSON.parse(fs.readFileSync(path.join(process.env['HOME'], '.lev'))) || {};
-
-  formatting = defaults.format;
 
   levelcfg.createIfMissing = defaults.level.createIfMissing;
   levelcfg.errorIfExists = defaults.level.errorIfExists;
@@ -70,24 +67,28 @@ var escapeRegExp = function escapeRegExp(str) {
 
 var cachedkeys = [];
 var databases = {};
-var location;
+var location = argv._[0];
 var commands = {};
-
 var OK = 'OK';
 
-if (argv._) {
-  argv.location = argv._[0];
-}
-
+//
+// if the user is not asking for help, ensure we are pointed at a valid
+// location.
+//
 if (!argv.h && !argv.help) {
-  fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
+
+  fs.stat(location || path.join('.', 'LOCK'), function(err) {
     
     if (levelcfg.createIfMissing === false && err && err.errno === 34) {
-      write('no leveldb found in this directory (specify a directory with `--location <dir>` or use `-c` to create).\r\n');
+
+      write(
+        'no leveldb found in this directory (specify a directory' +
+        ' or use `-c` to create a new database).\r\n'
+      );
       process.exit(1);
     }
     else {
-      location = argv.location || process.cwd();
+      location = location || process.cwd();
     }
 
     levelup(location, levelcfg, function(err, db) {
@@ -117,10 +118,10 @@ function lev(db) {
       if (databases[name].close) {
         databases[name].close(function(err) {
           
-          write('[attempting to close: ' + name + ']');
+          write('Attempting to close: ' + name + '\r\n');
 
           if (err) {
-            write(String(err));
+            write(err + '\r\n');
           }
         });        
       }
@@ -132,7 +133,13 @@ function lev(db) {
 
   process.on('uncaughtException', function(err) {
 
-    write(String(err));
+    if (err.type === 'unexpected_token') {
+      write('Encoding not compatible with ' + levelcfg.encoding + '\r\n');
+    }
+    else {
+      write(err + '\r\n');
+    }
+
     cleanup();
     process.exit(1);
   });
@@ -210,7 +217,7 @@ function lev(db) {
     description: 'Select the current database to use',
     usage: [
       'use([location])',
-      'Specify the leveldb instance to use (provides tab completion just like require).'
+      'Specify the leveldb instance to use (provides directory tab completion).'
     ],
     cli: false,
     method: function(db) {
@@ -258,10 +265,21 @@ function lev(db) {
       //
       if (argv.r) {
 
-        opts.start = argv.r;
-        opts.end = argv._[0] || argv.start + '~';
-        opts.limit = argv.limit || argv.l || -1;
-        opts.reverse = argv.reverse || false;
+        if (argv._[1]) {
+          opts.start = argv.r;
+        }
+
+        if (argv._[2]) {
+          opts.end = argv._[2] || argv.start + '~';
+        }
+
+        if (argv.limit || argv.l) {
+          opts.limit = argv.limit || argv.l;
+        }
+
+        if (argv.reverse) {
+          opts.reverse = argv.reverse
+        }
       }
       else if (typeof arguments[0] === 'boolean') {
         opts.values = false;
@@ -296,12 +314,18 @@ function lev(db) {
         }
       }
 
-      if (typeof opts.limit === 'undefined' && quiet === false) {
+      if (typeof opts.limit === 'undefined' && 
+        quiet === false && 
+        start !== -1 &&
+        !argv.r) {
+
         return write(
           'Result set may be quite large.\r\n' +
           'Consider specifying a limit or `-1` for all items.\r\n'
         );
       }
+
+      var buffer = [];
 
       db.readStream(opts).on('data', function(data) {
 
@@ -309,18 +333,15 @@ function lev(db) {
           cachedkeys.push(data.key || data);
         }
 
-        if (levelcfg.encoding === 'json') {
-          data = JSON.stringify(data, true, 2);
-        }
-        else {
-          data = String(data);
+        buffer.push(data);
+
+      })
+      .on('end', function() {
+
+        if (buffer.length && quiet === false) {
+          write(JSON.stringify(buffer, 2, 2) + '\r\n');
         }
 
-        if(quiet === false) {
-          write(formatting ? data + '\r\n' : data);
-        }
-      })
-      .on('end', function() { 
         if (r) {
           r.displayPrompt();
         }
@@ -355,7 +376,7 @@ function lev(db) {
       else {
 
         opts.start = argv.k;
-        opts.end = argv._[0] || opts.start + '~';
+        opts.end = argv._[1] || opts.start + '~';
         opts.limit = argv._[1] || -1;
       }
     }
@@ -428,8 +449,8 @@ function lev(db) {
           data = String(data);
         }
 
-        write(formatting ? data + '\r\n' : data);
-        
+        write(data + '\r\n');
+
         if (r) {
           r.displayPrompt();
           cb && cb(null, data);            
@@ -447,7 +468,7 @@ function lev(db) {
     method: function(key, value, cb) {
 
       key = key || argv.put || argv.p;
-      value = value || argv._[0];
+      value = value || argv._[1];
 
       if (typeof value === 'string') {
         value = value.replace(/\r\n/g, '');
@@ -464,7 +485,7 @@ function lev(db) {
           return cb && cb(err);
         }
 
-        write(formatting ? 'OK\r\n' : 'OK');
+        write('OK\r\n');
 
         if (r) {
           r.displayPrompt();
@@ -499,7 +520,7 @@ function lev(db) {
           return cb && cb(err);
         }
 
-        write(formatting ? 'OK\r\n' : 'OK');
+        write('OK\r\n');
         
         if (r) {
           r.displayPrompt();
@@ -558,17 +579,17 @@ function lev(db) {
     cli: true,
     method: function(start, end, cb) {
 
-      start = start || argv._[0] || ' ';
-      end = end || argv._[1] || '~';
+      start = start || argv._[1] || ' ';
+      end = end || argv._[2] || '~';
 
       if (!cb) {
         cb = function (err, size) { 
 
           if (err) {
-            return write(err);
+            return write(err + '\r\n');
           }
 
-          write(formatting ? size + '\r\n' : String(size));
+          write(size + '\r\n');
           
           if (r) {
             r.displayPrompt();
@@ -577,31 +598,6 @@ function lev(db) {
       }
 
       db.approximateSize(start, end, cb);
-    }
-  };
-
-  commands.format = {
-    description: 'Make nice(r) output to standard out.',
-    usage: [''],
-    shorthand: 'f',
-    cli: true,
-    method: function(b) {
-
-      //
-      // There might still be a bug with optimist's boolean settings
-      // so this bit of code can go away after that gets fixed.
-      //
-      if (typeof b !== undefined) {
-
-        return formatting = b;
-      }
-      else if (argv.format === 'false' || argv.f === 'false') {
-        return formatting = false;
-      }
-      else if (argv.format || argv.f) {
-        return formatting = true;
-      }
-      return formatting;
     }
   };
 

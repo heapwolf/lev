@@ -5,7 +5,7 @@ var test = require('tap').test;
 var p = path.join(__dirname, '..', 'fixtures', 'db');
 
 var options = {};
-var OK = 'OK';
+var OK = 'OK\r\n';
 
 const test_key1 = 'testkey1';
 const test_value1 = 'testvalue1';
@@ -30,7 +30,7 @@ module.exports = {
     //
     // for the first test, create the database in case it does not exist.
     //
-    var args = ['--put', test_key2, test_value2, '--c', '--location', p].concat(defaultargs);
+    var args = [p, '--put', test_key2, test_value2, '-c'].concat(defaultargs);
 
     var test_cp2 = spawn('lev', args);
     var test_output2 = '';
@@ -66,7 +66,7 @@ module.exports = {
 
     test.plan(2);
 
-    var args = ['-p', test_key1, test_value1, '--location', p].concat(defaultargs);
+    var args = [p, '-p', test_key1, test_value1].concat(defaultargs);
 
     var test_cp1 = spawn('lev', args);
     var test_output1 = '';
@@ -102,7 +102,7 @@ module.exports = {
 
     test.plan(2);
 
-    var args = ['-p', test_key3, test_value3, '--location', p].concat(defaultargs);
+    var args = [p, '-p', test_key3, test_value3].concat(defaultargs);
 
     var test_cp3 = spawn('lev', args, { cwd: p });
     var test_output3 = '';
@@ -138,7 +138,7 @@ module.exports = {
 
     test.plan(2);
 
-    var args = ['-p', test_key4, test_value4, '--location', p].concat(defaultargs);
+    var args = [p, '-p', test_key4, test_value4].concat(defaultargs);
 
     var test_cp4 = spawn('lev', args, { cwd: p });
     var test_output4 = '';
@@ -174,7 +174,7 @@ module.exports = {
 
     test.plan(1);
 
-    var args = ['-g', test_key1, '--location', p].concat(defaultargs);
+    var args = [p, '-g', test_key1].concat(defaultargs);
 
     var test_cp1 = spawn('lev', args);
     var test_output1 = '';
@@ -189,7 +189,7 @@ module.exports = {
 
     test_cp1.on('exit', function (data) {
 
-      test.equals(test_output1, test_value1);
+      test.equals(test_output1, test_value1 + '\r\n');
     });
   },
 
@@ -197,7 +197,7 @@ module.exports = {
 
     test.plan(1);
 
-    var args = ['--get', test_key2, '--location', p].concat(defaultargs);
+    var args = [p, '--get', test_key2].concat(defaultargs);
 
     var test_cp2 = spawn('lev', args);
     var test_output2 = '';
@@ -212,7 +212,7 @@ module.exports = {
 
     test_cp2.on('exit', function (data) {
   
-      test.equals(test_output2, test_value2);
+      test.equals(test_output2, test_value2 + '\r\n');
     });
   },
 
@@ -220,7 +220,7 @@ module.exports = {
 
     test.plan(2);
 
-    var args = ['-d', test_key3].concat(defaultargs);
+    var args = [p, '-d', test_key3].concat(defaultargs);
 
     var test_cp3 = spawn('lev', args, { cwd: p });
     var test_output3 = '';

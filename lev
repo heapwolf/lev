@@ -51,14 +51,8 @@ else if (argv.utf8) {
   levelcfg.keyEncoding = 'utf8';
 }
 
-replcfg = {
-  prompt: '>',
-  input: process.stdin,
-  output: process.stdout
-};
-
 var write = function(d) {
-  replcfg.output.write(d);
+  replcfg.output.write('\r\n' + d + '\r\n');
 };
 
 var escapeRegExp = function escapeRegExp(str) {
@@ -69,7 +63,22 @@ var cachedkeys = [];
 var databases = {};
 var location = argv._[0];
 var commands = {};
-var OK = 'OK';
+
+var ps;
+
+if (location.length > 15) {
+  ps = '...' + location.slice(-15);
+}
+else {
+  ps = location;
+}
+
+replcfg = {
+  prompt: ps + '>',
+  input: process.stdin,
+  output: process.stdout,
+  ignoreUndefined: true
+};
 
 //
 // if the user is not asking for help, ensure we are pointed at a valid
@@ -83,7 +92,7 @@ if (!argv.h && !argv.help) {
 
       write(
         'no leveldb found in this directory (specify a directory' +
-        ' or use `-c` to create a new database).\r\n'
+        ' or use `-c` to create a new database).'
       );
       process.exit(1);
     }
@@ -118,10 +127,10 @@ function lev(db) {
       if (databases[name].close) {
         databases[name].close(function(err) {
           
-          write('Attempting to close: ' + name + '\r\n');
+          write('Attempting to close: ' + name);
 
           if (err) {
-            write(err + '\r\n');
+            write(err);
           }
         });        
       }
@@ -134,10 +143,10 @@ function lev(db) {
   process.on('uncaughtException', function(err) {
 
     if (err.type === 'unexpected_token') {
-      write('Encoding not compatible with ' + levelcfg.encoding + '\r\n');
+      write('Encoding not compatible with ' + levelcfg.encoding);
     }
     else {
-      write(err + '\r\n');
+      write(err);
     }
 
     cleanup();
@@ -189,7 +198,7 @@ function lev(db) {
     method: function() {
 
       db.close(function(err) {
-        write((err || 'OK') + '\r\n');
+        write(err || 'OK');
         r.displayPrompt();
       });
 
@@ -205,7 +214,7 @@ function lev(db) {
     method: function() {
 
       db.open(function(err) {
-        write((!err ? 'OK' : err) + '\r\n');
+        write(!err ? 'OK' : err);
         r.displayPrompt();
       });
       return 'Opening...';
@@ -247,9 +256,9 @@ function lev(db) {
     }
   };
 
-  commands.readStream = {
+  commands.read = {
 
-    description: 'A readable stream of the full database.',
+    description: 'Read a range of keys and values from the database.',
     usage: [''],
     shorthand: 'r',
     cli: true,
@@ -321,7 +330,7 @@ function lev(db) {
 
         return write(
           'Result set may be quite large.\r\n' +
-          'Consider specifying a limit or `-1` for all items.\r\n'
+          'Consider specifying a limit or `-1` for all items.'
         );
       }
 
@@ -339,7 +348,7 @@ function lev(db) {
       .on('end', function() {
 
         if (buffer.length && quiet === false) {
-          write(JSON.stringify(buffer, 2, 2) + '\r\n');
+          write(JSON.stringify(buffer, 2, 2));
         }
 
         if (r) {
@@ -385,7 +394,7 @@ function lev(db) {
 
   commands.keys = {
     
-    description: 'A readable stream of all keys in the database',
+    description: 'Read a range of keys from the database.',
     usage: [''],
     shorthand: 'k',
     cli: true,
@@ -395,15 +404,13 @@ function lev(db) {
       opts.values = false;
       opts.keys = true;
 
-
-
-      commands.readStream.method(opts);
+      commands.read.method(opts);
     }
   };
 
   commands.values = {
 
-    description: 'A readable stream of all values in the database',
+    description: 'Read a range of values from the database.',
     usage: [''],
     shorthand: 'v',
     cli: true,
@@ -413,7 +420,7 @@ function lev(db) {
       opts.keys = false;
       opts.values = true;
 
-      commands.readStream.method(opts);
+      commands.read.method(opts);
     }
   };
 
@@ -438,7 +445,7 @@ function lev(db) {
       db.get(key, function(err, data) {
 
         if (err) {
-          write(err + '\r\n');
+          write(err);
           return cb && cb(err);
         }
 
@@ -449,7 +456,7 @@ function lev(db) {
           data = String(data);
         }
 
-        write(data + '\r\n');
+        write(data);
 
         if (r) {
           r.displayPrompt();
@@ -481,11 +488,11 @@ function lev(db) {
       db.put(key, value, function(err) {
 
         if (err) {
-          write(err + '\r\n');
+          write(err);
           return cb && cb(err);
         }
 
-        write('OK\r\n');
+        write('OK');
 
         if (r) {
           r.displayPrompt();
@@ -493,7 +500,7 @@ function lev(db) {
           //
           // refresh the cached keys.
           //
-          commands.readStream.method(true);
+          commands.read.method(true);
 
           return cb && cb(null);          
         }
@@ -520,7 +527,7 @@ function lev(db) {
           return cb && cb(err);
         }
 
-        write('OK\r\n');
+        write('OK');
         
         if (r) {
           r.displayPrompt();
@@ -528,15 +535,15 @@ function lev(db) {
           //
           // refresh the cached keys.
           //
-          commands.readStream.method(true);
+          commands.read.method(true);
           return cb && cb(null);            
         }
       });
     }
   };
 
-  commands.deleteRange = {
-    description: 'Delete a range',
+  commands.delr = {
+    description: 'Delete a range from the database.',
     usage: [
       'deleteRange(<start>, [end], [callback])',
       'Delete a range starting from <start> to [end].'
@@ -546,7 +553,7 @@ function lev(db) {
     method: function(start, end, cb) {
 
       if (!start) {
-        return write('A start key must be specified.\r\n');
+        return write('A start key must be specified.');
       }
 
       var opts = {};
@@ -563,7 +570,7 @@ function lev(db) {
         }
 
         if (r) {
-          commands.readStream.method(true);
+          commands.read.method(true);
           return cb && cb(null);
         }
       });
@@ -571,9 +578,9 @@ function lev(db) {
     }
   };
 
-  commands.approximateSize = {
+  commands.size = {
 
-    description: 'An approximate number of bytes of used by the given range',
+    description: 'An approximate number of bytes of used by the given range.',
     usage: [''],
     shorthand: 'a',
     cli: true,
@@ -586,10 +593,10 @@ function lev(db) {
         cb = function (err, size) { 
 
           if (err) {
-            return write(err + '\r\n');
+            return write(err);
           }
 
-          write(size + '\r\n');
+          write(size);
           
           if (r) {
             r.displayPrompt();
@@ -607,8 +614,6 @@ function lev(db) {
     shorthand: 'h',
     cli: true,
     method: function(method) {
-
-      write('\r\n');
 
       if (method) {
         write(commands[method].usage.join('\r\n'));
@@ -662,8 +667,7 @@ function lev(db) {
         ].join(' '));
       }
 
-      write(help.join('\r\n') + '\r\n');
-      return OK;
+      write(help.join('\r\n'));
     }
   };
 
@@ -697,6 +701,9 @@ function lev(db) {
   if (!cliop) {
     
     r = repl.start(replcfg);
+
+    // build a cache of the keys.
+    commands.read.method(true);
     
     for (var command in commands) {
       r.context[command] = commands[command].method;

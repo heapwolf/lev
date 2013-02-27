@@ -336,7 +336,7 @@ function lev(db) {
       db.readStream(opts).on('data', function(data) {
 
         if (!data.key && !data.value || data.key) {
-          cachedkeys.push(data.key || data);
+          cachedkeys.push(data.key || data.slice(1).slice(0, -1));
         }
 
         buffer.push(data);

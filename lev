@@ -61,7 +61,7 @@ var escapeRegExp = function escapeRegExp(str) {
 
 var cachedkeys = [];
 var databases = {};
-var location = argv._[0];
+var location = argv._[0] || process.cwd();
 var commands = {};
 
 var ps;
@@ -86,9 +86,9 @@ replcfg = {
 //
 if (!argv.h && !argv.help) {
 
-  fs.stat(location || path.join('.', 'LOCK'), function(err) {
+  fs.stat(path.join(location, 'LOCK'), function(err) {
     
-    if (levelcfg.createIfMissing === false && err && err.errno === 34) {
+    if (levelcfg.createIfMissing === false && err) {
 
       write(
         'no leveldb found in this directory (specify a directory' +
@@ -96,14 +96,11 @@ if (!argv.h && !argv.help) {
       );
       process.exit(1);
     }
-    else {
-      location = location || process.cwd();
-    }
 
     levelup(location, levelcfg, function(err, db) {
 
       if (err) {
-        return write(String(err));
+        return write(err);
       }
       lev(db);
     });

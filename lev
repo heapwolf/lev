@@ -6,6 +6,7 @@ var path = require('path');
 var http = require('http');
 var net = require('net');
 var readline = require('readline');
+var deleteRange = require("level-delete-range");
 
 var levelup = require('levelup');
 var argv = require('optimist').argv;
@@ -498,19 +499,42 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
       }
     };
 
+    commands.deleteRange = {
+      description: 'Delete a range',
+      usage: [''],
+      cli: true,
+      method: function(start, end, cb) {
+
+        deleteRange(db, { start: start, end: end }, function (err) {
+
+          if (err && cb) {
+            return cb(err);
+          }
+
+          write('OK');
+
+          if (r) {
+            commands.readStream.method(true);
+            return cb && cb(null);
+          }
+        });
+
+      }
+    };
+
     commands.approximateSize = {
 
       description: 'An approximate number of bytes of used by the given range',
       usage: [''],
       shorthand: 'a',
       cli: true,
-      method: function(start, end, callback) {
+      method: function(start, end, cb) {
 
         start = start || argv._[0] || ' ';
         end = end || argv._[1] || '~';
 
-        if (!callback) {
-          callback = function (err, size) { 
+        if (!cb) {
+          cb = function (err, size) { 
 
             if (err) {
               return write(err);
@@ -524,7 +548,7 @@ fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
           };
         }
 
-        db.approximateSize(start, end, callback);
+        db.approximateSize(start, end, cb);
       }
     };
 

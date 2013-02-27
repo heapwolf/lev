@@ -1,12 +1,13 @@
 {
   "name": "lev",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "bin": "./lev",
   "description": "commandline and REPL access for leveldb",
   "main": "lev",
   "dependencies": {
     "levelup": "0.6.0",
-    "optimist": "0.3.4"
+    "optimist": "0.3.4",
+    "level-delete-range": "0.1.0"
   },
   "devDependencies": {
     "tap": "0.3.3",

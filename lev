@@ -255,8 +255,6 @@ function lev(db) {
     cli: true,
     method: function(start, end, limit) {
 
-      cachedkeys = [];
-
       var opts = {};
       var quiet = false;
 
@@ -282,6 +280,7 @@ function lev(db) {
         }
       }
       else if (typeof arguments[0] === 'boolean') {
+        cachedkeys = [];
         opts.values = false;
         quiet = true;
       }
@@ -329,7 +328,7 @@ function lev(db) {
 
       db.readStream(opts).on('data', function(data) {
 
-        if (!data.key && !data.value || data.key) {
+        if (quiet === true && !data.key && (!data.value || data.key)) {
           cachedkeys.push(data.key || data);
         }
 
@@ -351,33 +350,44 @@ function lev(db) {
 
   //
   // key and value methods parse their args the same way.
+  // this function is a little crazy. there should be a better way to 
+  // do this. but then again, maybe it just needs to be a little crazy.
   //
   function keyValArgsParse(opts) {
 
     opts = opts || {};
 
-    var cliargs = argv.k || argv.keys || argv.v || argv.value;
+    var args = argv.k || argv.keys || argv.v || argv.value;
 
     if (typeof opts === 'number') {
+
       opts = { limit: opts };
     }
     else if (typeof opts === 'string') {
+
       opts = {
         start: opts,
         end: arguments[1] || opts + '~',
         limit: arguments[2] || -1
       }
     }
-    else if (cliargs) {
+    else if (args) {
 
-      if (typeof cliargs === 'number') {
-        opts.limit = cliargs;
+      if (typeof args === 'number') {
+
+        opts.limit = args;
+        argv._[1] && (opts.start = argv._[1]);
+        argv._[2] && (opts.end = argv._[2] || opts.start + '~');
+      }
+      else if (argv[1]) {
+        opts.limit = -1;
+        argv[1] && (opts.start = argv[1]);
+        argv._[1] && (opts.end = argv._[1] || opts.start + '~');
       }
       else {
-
-        opts.start = argv.k;
-        opts.end = argv._[1] || opts.start + '~';
-        opts.limit = argv._[1] || -1;
+        opts.limit = -1;
+        opts.start = args;
+        argv._[1] && (opts.end = argv._[1] || opts.start + '~');
       }
     }
     return opts || {};
@@ -389,9 +399,9 @@ function lev(db) {
     usage: [''],
     shorthand: 'k',
     cli: true,
-    method: function(opts) {
+    method: function() {
 
-      opts = keyValArgsParse(opts);
+      var opts = keyValArgsParse.apply(null, arguments);
       opts.values = false;
       opts.keys = true;
 
@@ -405,9 +415,9 @@ function lev(db) {
     usage: [''],
     shorthand: 'v',
     cli: true,
-    method: function(opts) {
+    method: function() {
 
-      opts = keyValArgsParse(opts);
+      var opts = keyValArgsParse.apply(null, arguments);
       opts.keys = false;
       opts.values = true;
 

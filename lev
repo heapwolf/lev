@@ -68,642 +68,676 @@ var escapeRegExp = function escapeRegExp(str) {
   return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 };
 
-
 var cachedkeys = [];
 var databases = {};
+var location;
+var commands = {};
+
 var OK = 'OK';
 
 if (argv._) {
   argv.location = argv._[0];
 }
 
-fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
-
-  var location;
-  var commands = {};
-  
-  var silentop;
-
-  if (levelcfg.createIfMissing === false && err && err.errno === 34) {
-    write('no leveldb found in this directory (specify a directory with `--location <dir>` or use `-c` to create).\r\n');
-    process.exit(1);
-  }
-  else {
-    location = argv.location || process.cwd();
-  }
-
-  levelup(location, levelcfg, function(err, db) {
-
-    if (err) {
-      return write(String(err));
+if (!argv.h && !argv.help) {
+  fs.stat(argv.location || path.join('.', 'LOCK'), function(err) {
+    
+    if (levelcfg.createIfMissing === false && err && err.errno === 34) {
+      write('no leveldb found in this directory (specify a directory with `--location <dir>` or use `-c` to create).\r\n');
+      process.exit(1);
+    }
+    else {
+      location = argv.location || process.cwd();
     }
 
+    levelup(location, levelcfg, function(err, db) {
+
+      if (err) {
+        return write(String(err));
+      }
+      lev(db);
+    });
+
+  });
+}
+else {
+  lev();
+}
+
+function lev(db) {
+
+  if (db) {
     databases[location] = db;
+  }
 
-    var cleanup = function() {
+  var cleanup = function() {
 
-      Object.keys(databases).forEach(function(name) {
+    Object.keys(databases).forEach(function(name) {
+
+      if (databases[name].close) {
         databases[name].close(function(err) {
           
           write('[attempting to close: ' + name + ']');
 
           if (err) {
-            write(err);
+            write(String(err));
           }
-        });
-      });
-    };
-
-    process.on('exit', cleanup);
-    process.on('SIGINT', cleanup);
-
-    process.on('uncaughtException', function(err) {
-      cleanup();
-      process.exit(1);
+        });        
+      }
     });
+  };
 
-    commands.config = {
+  process.on('exit', cleanup);
+  process.on('SIGINT', cleanup);
 
-      description: 'Get the current configuration object',
-      usage: [''],
-      cli: false,
-      method: function(encoding, includeKeys) {
-        return levelcfg;
-      }
-    };
+  process.on('uncaughtException', function(err) {
 
-    commands.pwd = {
+    write(String(err));
+    cleanup();
+    process.exit(1);
+  });
 
-      description: 'Path of the current working database',
-      usage: [''],
-      cli: false,
-      method: function() {
-        return location;
-      }
-    };
+  commands.config = {
 
-    commands.create = {
+    description: 'Get the current configuration object',
+    usage: [''],
+    cli: false,
+    method: function(encoding, includeKeys) {
+      return levelcfg;
+    }
+  };
 
-      description: 'Return a new instance of leveldb',
-      usage: [''],
-      cli: false,
-      method: function(loc, opts, callback) {
+  commands.pwd = {
 
-        opts = opts || {};
+    description: 'Path of the current working database',
+    usage: [''],
+    cli: false,
+    method: function() {
+      return location;
+    }
+  };
 
-        opts.createIfMissing = true;
+  commands.create = {
 
-        location = loc;
-        databases[loc] = levelup(loc, opts, callback);
-        return Object.keys(databases);
-      }
-    };
-
-    commands.close = {
-
-      description: 'Close an instance of leveldb',
-      usage: [''],
-      cli: false,
-      method: function() {
-
-        db.close(function(err) {
-          write((err || 'OK') + '\r\n');
-          r.displayPrompt();
-        });
-
-        return 'Closing...';
-      }
-    };
-
-    commands.open = {
-
-      description: 'Open an instance of leveldb',
-      usage: [''],
-      cli: false,
-      method: function() {
-
-        db.open(function(err) {
-          write((!err ? 'OK' : err) + '\r\n');
-          r.displayPrompt();
-        });
-        return 'Opening...';
-      }
-    };
-
-    commands.use = {
-
-      description: 'Select the current database to use',
-      usage: [
-        'use([location])',
-        'Specify the leveldb instance to use (provides tab completion just like require).'
-      ],
-      cli: false,
-      method: function(db) {
-
-        if (!databases[db]) {
-          return commands.create.method(db);
-        }
-
-        if (!db) {
-          return db;
-        }
-
-        location = db;
-        db = databases[db];
-        return Object.keys(databases);
-      }
-    };
-
-    commands.ls = {
-
-      description: 'list of databases',
-      usage: [''],
-      cli: false,
-      method: function(db) {
-
-        return Object.keys(databases);
-      }
-    };
-
-    commands.readStream = {
-
-      description: 'A readable stream of the full database.',
-      usage: [''],
-      shorthand: 'r',
-      cli: true,
-      method: function(start, end, limit) {
-
-        cachedkeys = [];
-
-        var opts = {};
-        var quiet = false;
-
-        //
-        // the options may be specified from the cli.
-        //
-        if (argv.r) {
-
-          opts.start = argv.r;
-          opts.end = argv._[0] || argv.start + '~';
-          opts.limit = argv.limit || argv.l || -1;
-          opts.reverse = argv.reverse || false;
-        }
-        else if (typeof arguments[0] === 'boolean') {
-          opts.values = false;
-          quiet = true;
-        }
-
-        //
-        // the first argument may be the limit
-        //
-        else if (typeof arguments[0] === 'number' && arguments[0] !== -1) {
-          opts.limit = arguments[0];
-        }
-
-        //
-        // the first argument may be an options object.
-        //
-        else if (typeof arguments[0] === 'object') {
-          opts = arguments[0];
-        }
-
-        //
-        // the options may be as specified in the method's signature
-        //
-        else {
-
-          if (start || argv.start) {
-            opts.start = start || argv.start;
-          }
-
-          if (end || argv.end) {
-            opts.end = end || argv.end || opts.start + '~';
-          }
-        }
-
-        if (typeof opts.limit === 'undefined' && quiet === false) {
-          return write(
-            'Result set may be quite large.\r\n' +
-            'Consider specifying a limit or `-1` for all items.\r\n'
-          );
-        }
-
-        db.readStream(opts).on('data', function(data) {
-
-          if (!data.key && !data.value || data.key) {
-            cachedkeys.push(data.key || data);
-          }
-
-          if (levelcfg.encoding === 'json') {
-            data = JSON.stringify(data, true, 2);
-          }
-          else {
-            data = String(data);
-          }
-
-          if(quiet === false) {
-            write(formatting ? data + '\r\n' : data);
-          }
-        })
-        .on('end', function() { 
-          if (r) {
-            r.displayPrompt();
-          }
-        });
-      }
-    };
-
-    //
-    // key and value methods parse their args the same way.
-    //
-    function keyValArgsParse(opts) {
+    description: 'Return a new instance of leveldb',
+    usage: [''],
+    cli: false,
+    method: function(loc, opts, callback) {
 
       opts = opts || {};
 
-      var cliargs = argv.k || argv.keys || argv.v || argv.value;
+      opts.createIfMissing = true;
 
-      if (typeof opts === 'number') {
-        opts = { limit: opts };
+      location = loc;
+      databases[loc] = levelup(loc, opts, callback);
+      return Object.keys(databases);
+    }
+  };
+
+  commands.close = {
+
+    description: 'Close an instance of leveldb',
+    usage: [''],
+    cli: false,
+    method: function() {
+
+      db.close(function(err) {
+        write((err || 'OK') + '\r\n');
+        r.displayPrompt();
+      });
+
+      return 'Closing...';
+    }
+  };
+
+  commands.open = {
+
+    description: 'Open an instance of leveldb',
+    usage: [''],
+    cli: false,
+    method: function() {
+
+      db.open(function(err) {
+        write((!err ? 'OK' : err) + '\r\n');
+        r.displayPrompt();
+      });
+      return 'Opening...';
+    }
+  };
+
+  commands.use = {
+
+    description: 'Select the current database to use',
+    usage: [
+      'use([location])',
+      'Specify the leveldb instance to use (provides tab completion just like require).'
+    ],
+    cli: false,
+    method: function(db) {
+
+      if (!databases[db]) {
+        return commands.create.method(db);
       }
-      else if (typeof opts === 'string') {
-        opts = {
-          start: opts,
-          end: arguments[1] || opts + '~',
-          limit: arguments[2] || -1
+
+      if (!db) {
+        return db;
+      }
+
+      location = db;
+      db = databases[db];
+      return Object.keys(databases);
+    }
+  };
+
+  commands.ls = {
+
+    description: 'list of databases',
+    usage: [''],
+    cli: false,
+    method: function(db) {
+
+      return Object.keys(databases);
+    }
+  };
+
+  commands.readStream = {
+
+    description: 'A readable stream of the full database.',
+    usage: [''],
+    shorthand: 'r',
+    cli: true,
+    method: function(start, end, limit) {
+
+      cachedkeys = [];
+
+      var opts = {};
+      var quiet = false;
+
+      //
+      // the options may be specified from the cli.
+      //
+      if (argv.r) {
+
+        opts.start = argv.r;
+        opts.end = argv._[0] || argv.start + '~';
+        opts.limit = argv.limit || argv.l || -1;
+        opts.reverse = argv.reverse || false;
+      }
+      else if (typeof arguments[0] === 'boolean') {
+        opts.values = false;
+        quiet = true;
+      }
+
+      //
+      // the first argument may be the limit
+      //
+      else if (typeof arguments[0] === 'number' && arguments[0] !== -1) {
+        opts.limit = arguments[0];
+      }
+
+      //
+      // the first argument may be an options object.
+      //
+      else if (typeof arguments[0] === 'object') {
+        opts = arguments[0];
+      }
+
+      //
+      // the options may be as specified in the method's signature
+      //
+      else {
+
+        if (start || argv.start) {
+          opts.start = start || argv.start;
+        }
+
+        if (end || argv.end) {
+          opts.end = end || argv.end || opts.start + '~';
         }
       }
-      else if (cliargs) {
 
-        if (typeof cliargs === 'number') {
-          opts.limit = cliargs;
+      if (typeof opts.limit === 'undefined' && quiet === false) {
+        return write(
+          'Result set may be quite large.\r\n' +
+          'Consider specifying a limit or `-1` for all items.\r\n'
+        );
+      }
+
+      db.readStream(opts).on('data', function(data) {
+
+        if (!data.key && !data.value || data.key) {
+          cachedkeys.push(data.key || data);
+        }
+
+        if (levelcfg.encoding === 'json') {
+          data = JSON.stringify(data, true, 2);
         }
         else {
-
-          opts.start = argv.k;
-          opts.end = argv._[0] || opts.start + '~';
-          opts.limit = argv._[1] || -1;
-        }
-      }
-      return opts || {};
-    }
-
-    commands.keys = {
-      
-      description: 'A readable stream of all keys in the database',
-      usage: [''],
-      shorthand: 'k',
-      cli: true,
-      method: function(opts) {
-
-        opts = keyValArgsParse(opts);
-        opts.values = false;
-        opts.keys = true;
-
-
-
-        commands.readStream.method(opts);
-      }
-    };
-
-    commands.values = {
-
-      description: 'A readable stream of all values in the database',
-      usage: [''],
-      shorthand: 'v',
-      cli: true,
-      method: function(opts) {
-
-        opts = keyValArgsParse(opts);
-        opts.keys = false;
-        opts.values = true;
-
-        commands.readStream.method(opts);
-      }
-    };
-
-    commands.get = {
-
-      description: 'Fetch data from the store.',
-      usage: [''],
-      shorthand: 'g',
-      cli: true,
-      method: function(key, cb) {
-
-        key = key || argv.get || argv.g;
-
-        if (typeof key === 'string') {
-          key = key.replace(/\r\n/g, '');
+          data = String(data);
         }
 
-        if (!key) { 
-          return new Error('missing argument'); 
-        }
-
-        db.get(key, function(err, data) {
-
-          if (err) {
-            write(err + '\r\n');
-            return cb && cb(err);
-          }
-
-          if (levelcfg.encoding === 'json') {
-            data = JSON.stringify(data, true, 2);
-          }
-          else {
-            data = String(data);
-          }
-
+        if(quiet === false) {
           write(formatting ? data + '\r\n' : data);
-          
-          if (r) {
-            r.displayPrompt();
-            cb && cb(null, data);            
-          }
-        });
-      }
-    };
-
-    commands.put = {
-
-      description: 'Insert data into the store.',
-      usage: [''],
-      shorthand: 'p',
-      cli: true,
-      method: function(key, value, cb) {
-
-        key = key || argv.put || argv.p;
-        value = value || argv._[0];
-
-        if (typeof value === 'string') {
-          value = value.replace(/\r\n/g, '');
         }
-
-        if (!key) { 
-          return new Error('missing argument'); 
+      })
+      .on('end', function() { 
+        if (r) {
+          r.displayPrompt();
         }
+      });
+    }
+  };
 
-        db.put(key, value, function(err) {
+  //
+  // key and value methods parse their args the same way.
+  //
+  function keyValArgsParse(opts) {
 
-          if (err) {
-            write(err + '\r\n');
-            return cb && cb(err);
-          }
+    opts = opts || {};
 
-          write(formatting ? 'OK\r\n' : 'OK');
+    var cliargs = argv.k || argv.keys || argv.v || argv.value;
 
-          if (r) {
-            r.displayPrompt();
-            
-            //
-            // refresh the cached keys.
-            //
-            commands.readStream.method(true);
-
-            return cb && cb(null);          
-          }
-        });
-      }
-    };
-
-    commands.del = {
-
-      description: 'Remove data from the store.',
-      usage: [''],
-      shorthand: 'd',
-      cli: true,
-      method: function(key, opts, cb) {
-
-        key = key || argv.del || argv.d;
-
-        if (!key) { 
-          return new Error('missing argument'); 
-        }
-
-        db.del(key, function(err) {
-          if (err) {
-            return cb && cb(err);
-          }
-
-          write(formatting ? 'OK\r\n' : 'OK');
-          
-          if (r) {
-            r.displayPrompt();
-
-            //
-            // refresh the cached keys.
-            //
-            commands.readStream.method(true);
-            return cb && cb(null);            
-          }
-        });
-      }
-    };
-
-    commands.deleteRange = {
-      description: 'Delete a range',
-      usage: [''],
-      cli: true,
-      method: function(start, end, cb) {
-
-        deleteRange(db, { start: start, end: end }, function (err) {
-
-          if (err && cb) {
-            return cb(err);
-          }
-
-          write('OK');
-
-          if (r) {
-            commands.readStream.method(true);
-            return cb && cb(null);
-          }
-        });
-
-      }
-    };
-
-    commands.approximateSize = {
-
-      description: 'An approximate number of bytes of used by the given range',
-      usage: [''],
-      shorthand: 'a',
-      cli: true,
-      method: function(start, end, cb) {
-
-        start = start || argv._[0] || ' ';
-        end = end || argv._[1] || '~';
-
-        if (!cb) {
-          cb = function (err, size) { 
-
-            if (err) {
-              return write(err);
-            }
-
-            write(formatting ? size + '\r\n' : String(size));
-            
-            if (r) {
-              r.displayPrompt();
-            }
-          };
-        }
-
-        db.approximateSize(start, end, cb);
-      }
-    };
-
-    commands.format = {
-      description: 'Make nice(r) output to standard out.',
-      usage: [''],
-      shorthand: 'f',
-      cli: true,
-      method: function(b) {
-
-        //
-        // There might still be a bug with optimist's boolean settings
-        // so this bit of code can go away after that gets fixed.
-        //
-        if (typeof b !== undefined) {
-
-          return formatting = b;
-        }
-        else if (argv.format === 'false' || argv.f === 'false') {
-          return formatting = false;
-        }
-        else if (argv.format || argv.f) {
-          return formatting = true;
-        }
-        return formatting;
-      }
-    };
-
-    commands.help = {
-      description: 'This help',
-      usage: [''],
-      shorthand: 'h',
-      cli: true,
-      method: function(method) {
-
-        write('\r\n');
-
-        if (method) {
-          write(commands[method].usage.join('\r\n'));
-        }
-
-        //
-        // TODO: get individual help
-        //
-
-        var longestkey = 0, padding = ' ';
-
-        for (var command in commands) {
-          if (command.length > longestkey) {
-            longestkey = command.length;
-          }
-        }
-
-        while(longestkey) {
-          padding += ' ';
-          longestkey--;
-        }
-
-        var help = [];
-
-        for (var command in commands) {
-          var c = commands[command];
-          var s = '  ';
-          
-          if (argv.help || argv.h) {
-            if (!c.cli) {
-              continue;
-            }
-
-            s = (c.shorthand && '-' + c.shorthand);
-            command = '--' + command;
-          }
-          else {
-            command = command + '()';
-          }
-
-          help.push([
-            s,
-            command + padding.slice(command.length-2),
-            c.description
-          ].join(' '));
-        }
-
-        write(help.join('\r\n') + '\r\n');
-        return OK;
-      }
-    };
-
-    var shorthandmap = {};
-    var cliop;
-
-    for (var command in commands) {
-      var s = commands[command].shorthand;
-      if (s) {
-        shorthandmap[s] = command;
+    if (typeof opts === 'number') {
+      opts = { limit: opts };
+    }
+    else if (typeof opts === 'string') {
+      opts = {
+        start: opts,
+        end: arguments[1] || opts + '~',
+        limit: arguments[2] || -1
       }
     }
+    else if (cliargs) {
 
-    //
-    // test if this was meant to be executed from the commandline.
-    //
-    for (var command in argv) {
-
-      var c;
-
-      if (shorthandmap[command]) {
-        commands[shorthandmap[command]].method();
-        cliop = true;
+      if (typeof cliargs === 'number') {
+        opts.limit = cliargs;
       }
-      else if (commands[command] && commands[command].cli) {
-        commands[command].method();
-        cliop = true;
+      else {
+
+        opts.start = argv.k;
+        opts.end = argv._[0] || opts.start + '~';
+        opts.limit = argv._[1] || -1;
       }
     }
+    return opts || {};
+  }
 
-    if (!cliop) {
-      
-      r = repl.start(replcfg);
-      
+  commands.keys = {
+    
+    description: 'A readable stream of all keys in the database',
+    usage: [''],
+    shorthand: 'k',
+    cli: true,
+    method: function(opts) {
+
+      opts = keyValArgsParse(opts);
+      opts.values = false;
+      opts.keys = true;
+
+
+
+      commands.readStream.method(opts);
+    }
+  };
+
+  commands.values = {
+
+    description: 'A readable stream of all values in the database',
+    usage: [''],
+    shorthand: 'v',
+    cli: true,
+    method: function(opts) {
+
+      opts = keyValArgsParse(opts);
+      opts.keys = false;
+      opts.values = true;
+
+      commands.readStream.method(opts);
+    }
+  };
+
+  commands.get = {
+
+    description: 'Fetch data from the store.',
+    usage: [''],
+    shorthand: 'g',
+    cli: true,
+    method: function(key, cb) {
+
+      key = key || argv.get || argv.g;
+
+      if (typeof key === 'string') {
+        key = key.replace(/\r\n/g, '');
+      }
+
+      if (!key) { 
+        return new Error('missing argument'); 
+      }
+
+      db.get(key, function(err, data) {
+
+        if (err) {
+          write(err + '\r\n');
+          return cb && cb(err);
+        }
+
+        if (levelcfg.encoding === 'json') {
+          data = JSON.stringify(data, true, 2);
+        }
+        else {
+          data = String(data);
+        }
+
+        write(formatting ? data + '\r\n' : data);
+        
+        if (r) {
+          r.displayPrompt();
+          cb && cb(null, data);            
+        }
+      });
+    }
+  };
+
+  commands.put = {
+
+    description: 'Insert data into the store.',
+    usage: [''],
+    shorthand: 'p',
+    cli: true,
+    method: function(key, value, cb) {
+
+      key = key || argv.put || argv.p;
+      value = value || argv._[0];
+
+      if (typeof value === 'string') {
+        value = value.replace(/\r\n/g, '');
+      }
+
+      if (!key) { 
+        return new Error('missing argument'); 
+      }
+
+      db.put(key, value, function(err) {
+
+        if (err) {
+          write(err + '\r\n');
+          return cb && cb(err);
+        }
+
+        write(formatting ? 'OK\r\n' : 'OK');
+
+        if (r) {
+          r.displayPrompt();
+          
+          //
+          // refresh the cached keys.
+          //
+          commands.readStream.method(true);
+
+          return cb && cb(null);          
+        }
+      });
+    }
+  };
+
+  commands.del = {
+
+    description: 'Remove data from the store.',
+    usage: [''],
+    shorthand: 'd',
+    cli: true,
+    method: function(key, opts, cb) {
+
+      key = key || argv.del || argv.d;
+
+      if (!key) { 
+        return new Error('missing argument'); 
+      }
+
+      db.del(key, function(err) {
+        if (err) {
+          return cb && cb(err);
+        }
+
+        write(formatting ? 'OK\r\n' : 'OK');
+        
+        if (r) {
+          r.displayPrompt();
+
+          //
+          // refresh the cached keys.
+          //
+          commands.readStream.method(true);
+          return cb && cb(null);            
+        }
+      });
+    }
+  };
+
+  commands.deleteRange = {
+    description: 'Delete a range',
+    usage: [
+      'deleteRange(<start>, [end], [callback])',
+      'Delete a range starting from <start> to [end].'
+    ],
+    shorthand: '',
+    cli: true,
+    method: function(start, end, cb) {
+
+      if (!start) {
+        return write('A start key must be specified.\r\n');
+      }
+
+      var opts = {};
+      opts.start = start;
+
+      if (end) {
+        opts.end = end;
+      }
+
+      deleteRange(db, opts, function (err) {
+
+        if (err && cb) {
+          return cb(err);
+        }
+
+        if (r) {
+          commands.readStream.method(true);
+          return cb && cb(null);
+        }
+      });
+
+    }
+  };
+
+  commands.approximateSize = {
+
+    description: 'An approximate number of bytes of used by the given range',
+    usage: [''],
+    shorthand: 'a',
+    cli: true,
+    method: function(start, end, cb) {
+
+      start = start || argv._[0] || ' ';
+      end = end || argv._[1] || '~';
+
+      if (!cb) {
+        cb = function (err, size) { 
+
+          if (err) {
+            return write(err);
+          }
+
+          write(formatting ? size + '\r\n' : String(size));
+          
+          if (r) {
+            r.displayPrompt();
+          }
+        };
+      }
+
+      db.approximateSize(start, end, cb);
+    }
+  };
+
+  commands.format = {
+    description: 'Make nice(r) output to standard out.',
+    usage: [''],
+    shorthand: 'f',
+    cli: true,
+    method: function(b) {
+
+      //
+      // There might still be a bug with optimist's boolean settings
+      // so this bit of code can go away after that gets fixed.
+      //
+      if (typeof b !== undefined) {
+
+        return formatting = b;
+      }
+      else if (argv.format === 'false' || argv.f === 'false') {
+        return formatting = false;
+      }
+      else if (argv.format || argv.f) {
+        return formatting = true;
+      }
+      return formatting;
+    }
+  };
+
+  commands.help = {
+    description: 'This help',
+    usage: [''],
+    shorthand: 'h',
+    cli: true,
+    method: function(method) {
+
+      write('\r\n');
+
+      if (method) {
+        write(commands[method].usage.join('\r\n'));
+      }
+
+      //
+      // TODO: get individual help
+      //
+
+      var longestkey = 0, padding = ' ';
+
       for (var command in commands) {
-        r.context[command] = commands[command].method;
+        if (command.length > longestkey) {
+          longestkey = command.length;
+        }
       }
 
-      var _complete = r.complete;
-      var cmdRE = /\b(?:get|del|put|range)\s*\((?:['"])(.*)/;
-      var useRE = /\b(?:use)\s*\((?:['"])(.*)/;
+      while(longestkey) {
+        padding += ' ';
+        longestkey--;
+      }
 
-      r.complete = function(line, callback) {
+      var help = [];
 
-        var match = line.match(cmdRE);
-        var use = line.match(useRE);
-        var filter = [];
+      for (var command in commands) {
+        var c = commands[command];
+        var s = '  ';
+        
+        if (argv.help || argv.h) {
+          if (!c.cli) {
+            continue;
+          }
 
-        if (use) {
-          return _complete.call(this, 'require(\'' + use[1], arguments[1]);
-        }
-
-        else if (match) {
-
-          if (cachedkeys.length === 0) {
-            callback(null, [[], '']);
+          if (c.shorthand === '') {
+            s = '  ';
           }
           else {
-            
-            filter = cachedkeys.filter(function(e) {
-              return e.match(new RegExp('^' + escapeRegExp(match[1]) + '(?:.*?)$'));
-            });
+            s = (c.shorthand && '-' + c.shorthand);
           }
 
-          var list = (filter.length > 0) ? filter : cachedkeys;
-          return callback(null, [list, match[1]]);
+          command = '--' + command;
         }
-        _complete.apply(this, arguments);
+        else {
+          command = command + '()';
+        }
 
-      };
+        help.push([
+          s,
+          command + padding.slice(command.length-2),
+          c.description
+        ].join(' '));
+      }
+
+      write(help.join('\r\n') + '\r\n');
+      return OK;
     }
-  });
-});
+  };
+
+  var shorthandmap = {};
+  var cliop;
+
+  for (var command in commands) {
+    var s = commands[command].shorthand;
+    if (s) {
+      shorthandmap[s] = command;
+    }
+  }
+
+  //
+  // test if this was meant to be executed from the commandline.
+  //
+  for (var command in argv) {
+
+    var c;
+
+    if (shorthandmap[command]) {
+      cliop = true;
+      commands[shorthandmap[command]].method();
+    }
+    else if (commands[command] && commands[command].cli) {
+      cliop = true;
+      commands[command].method();
+    }
+  }
+
+  if (!cliop) {
+    
+    r = repl.start(replcfg);
+    
+    for (var command in commands) {
+      r.context[command] = commands[command].method;
+    }
+
+    var _complete = r.complete;
+    var cmdRE = /\b(?:get|del|put|range)\s*\((?:['"])(.*)/;
+    var useRE = /\b(?:use)\s*\((?:['"])(.*)/;
+
+    r.complete = function(line, callback) {
+
+      var match = line.match(cmdRE);
+      var use = line.match(useRE);
+      var filter = [];
+
+      if (use) {
+        return _complete.call(this, 'require(\'' + use[1], arguments[1]);
+      }
+
+      else if (match) {
+
+        if (cachedkeys.length === 0) {
+          callback(null, [[], '']);
+        }
+        else {
+          
+          filter = cachedkeys.filter(function(e) {
+            return e.match(new RegExp('^' + escapeRegExp(match[1]) + '(?:.*?)$'));
+          });
+        }
+
+        var list = (filter.length > 0) ? filter : cachedkeys;
+        return callback(null, [list, match[1]]);
+      }
+      _complete.apply(this, arguments);
+
+    };
+  }
+}
+

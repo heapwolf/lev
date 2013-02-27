@@ -9,7 +9,7 @@ $npm install lev -g
 # USAGE
 
 ## CLI
-An example of getting the first 10 keys in the database and printing them out.
+An example of a command to get the first 10 keys in the database.
 ```js
 lev path/to/db -k 10
 ```
@@ -28,7 +28,7 @@ lev path/to/db -k 10
 ```
 
 ## REPL
-The REPL has autocomplete and suggestions for database keys. Type 
+The REPL has autocomplete and suggestion lists for database keys. Type 
 `get('...<tab>`, `put('...<tab>`, etc. Because some databases can be extremely
 large, you must specify a value when doing operations that stream data. If you
 are absolutely sure you want everything you can specify `-1` as a value.
@@ -54,7 +54,7 @@ path/to/db>
     "value": "bazz"
   }
 ]
-test/fixtures/db/>
+path/to/db>
 ```
 
 ```
@@ -80,7 +80,7 @@ path/to/db>help()
 path/to/db>
 ```
 
-# Default Configuration
+## Default Configuration
 You can create a `.lev` file in your home directory and it will be used to set the 
 defaults. Command line arguments will override the default settings in this file.
 

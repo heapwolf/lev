@@ -15,15 +15,16 @@ lev path/to/db -k 10
 ```
 
 ```
--r --read    Read a range of keys and values from the database.
--k --keys    Read a range of keys from the database.
--v --values  Read a range of values from the database.
--g --get     Fetch data from the store.
--p --put     Insert data into the store.
--d --del     Remove data from the store.
-   --delr    Delete a range from the database.
--a --size    An approximate number of bytes of used by the given range.
--h --help    This help
+-r --read     Read a range of keys and values from the database.
+-k --keys     Read a range of keys from the database.
+-v --values   Read a range of values from the database.
+-g --get      Fetch data from the store.
+-p --put      Insert data into the store.
+-d --del      Remove data from the store.
+   --delr     Delete a range from the database.
+-a --size     An approximate number of bytes of used by the given range.
+   --encoding Specify `json` or `utf8` for the encoding type.
+-h --help     This help
 ```
 
 ## REPL
@@ -33,9 +34,16 @@ large, you must specify a value when doing operations that stream data. If you
 are absolutely sure you want everything you can specify `-1` as a value.
 
 ```bash
->lev test/fixtures/db/
->read(2)
->
+>lev path/to/db
+
+compression = true
+encoding = utf8
+keyEncoding = utf8
+valueEncoding = utf8
+levelup version = 0.6.0
+
+path/to/db>read(2)
+path/to/db>
 [
   {
     "key": "foo",
@@ -46,11 +54,11 @@ are absolutely sure you want everything you can specify `-1` as a value.
     "value": "bazz"
   }
 ]
->
+test/fixtures/db/>
 ```
 
 ```
->help()
+path/to/db>help()
 
    config()  Get the current configuration object
    pwd()     Path of the current working database
@@ -68,7 +76,8 @@ are absolutely sure you want everything you can specify `-1` as a value.
    delr()    Delete a range from the database.
    size()    An approximate number of bytes of used by the given range.
    help()    This help
->
+
+path/to/db>
 ```
 
 # Default Configuration

@@ -25,9 +25,11 @@ try {
   levelcfg.errorIfExists = defaults.level.errorIfExists;
   levelcfg.compression = defaults.level.compression;
   levelcfg.encoding = defaults.level.encoding;
-  levelcfg.keyEncoding = defaults.level.encoding;
+  levelcfg.keyEncoding = defaults.level.keyEncoding;
+  levelcfg.valueEncoding = defaults.level.valueEncoding;
 }
 catch(ex) {
+
   if (ex.name === 'SyntaxError') {
     console.log('error parsing settings file [%s]', ex.message);
   }
@@ -41,15 +43,7 @@ levelcfg.errorIfExists = argv.errorIfExists || levelcfg.errorIfExists || false;
 levelcfg.compression = argv.compression || levelcfg.compression || true;
 levelcfg.encoding = argv.encoding || levelcfg.encoding || 'utf8';
 levelcfg.keyEncoding = argv.keyEncoding || levelcfg.keyEncoding || 'utf8';
-
-if (argv.json) {
-  levelcfg.encoding = 'json';
-  levelcfg.keyEncoding = 'json';
-}
-else if (argv.utf8) {
-  levelcfg.encoding = 'utf8';
-  levelcfg.keyEncoding = 'utf8';
-}
+levelcfg.valueEncoding = argv.valueEncoding || levelcfg.valueEncoding || 'utf8';
 
 var write = function(d) {
   replcfg.output.write('\r\n' + d + '\r\n');
@@ -697,6 +691,21 @@ function lev(db) {
 
   if (!cliop) {
     
+    var levelupVersion = require(
+      path.join(__dirname, 'node_modules', 'levelup', 'package.json')
+    ).version;
+
+    write([
+      
+      'compression = ' + levelcfg.compression,
+      'encoding = ' + levelcfg.encoding,
+      'keyEncoding = ' + levelcfg.keyEncoding,
+      'valueEncoding = ' + levelcfg.valueEncoding,
+      'levelup version = ' + levelupVersion,
+      ''
+
+    ].join('\r\n'));
+
     r = repl.start(replcfg);
 
     // build a cache of the keys.

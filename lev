@@ -501,7 +501,7 @@ function lev(db) {
       'deleteRange(<start>, [end], [callback])',
       'Delete a range starting from <start> to [end].'
     ],
-    shorthand: '',
+    shorthand: 'D',
     cli: true,
     method: function(start, end, cb) {
 

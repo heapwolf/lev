@@ -6,28 +6,62 @@ A commandline tool and repl (with autocomplete and suggestions for keys) for `le
 $npm install lev -g
 ```
 
-# USAGE
+# CLI EXAMPLES
 
-## CLI
-An example of getting the first 10 keys in the database and printing them out.
+Get the first 10 keys in the database, the path is optional.
 ```js
 lev path/to/db -k 10
 ```
 
-```
--r --read     Read a range of keys and values from the database.
--k --keys     Read a range of keys from the database.
--v --values   Read a range of values from the database.
--g --get      Fetch data from the store.
--p --put      Insert data into the store.
--d --del      Remove data from the store.
-   --delr     Delete a range from the database.
--a --size     An approximate number of bytes of used by the given range.
-   --encoding Specify `json` or `utf8` for the encoding type.
--h --help     This help
+Get the first ten records starting at `bazz` and ending at `zomg`.
+```js
+lev -r 10 'bazz' 'zomg'
 ```
 
-## REPL
+# CLI OPTIONS
+
+## -r --read [limit] [start] [end]
+Stream a range of keys and values. Where limit is a number, start and end are 
+strings.
+
+## --rev
+Return the values in reverse.
+
+## -k [limit] [start] [end], --keys [limit] [start] [end]
+Stream a range of keys.
+
+## -v [limit] [start] [end], --values [limit] [start] [end]
+Stream a range of values.
+
+## -g <key>, --get <key>
+Fetch the data for a specific key.
+
+## -p <key>, --put <key>
+Insert data for a specific key.
+
+## -d <key> --del <key>
+Delete the data for a particular key.
+
+## --delr <key> [key]
+Delete a range starting from the first key until the second key if one is
+provided.
+
+## -a --size <key> <key>
+An approximate number of bytes of used by the given range.
+
+## --valueEncoding
+Specify encoding type for just the values.
+
+## --keyEncoding
+Specify encoding type for just the keys.
+
+## --encoding
+Specify encoding for both.
+
+## -h --help 
+This help
+
+# REPL EXAMPLES
 The REPL has autocomplete and suggestions for database keys. Type 
 `get('...<tab>`, `put('...<tab>`, etc. Because some databases can be extremely
 large, you must specify a value when doing operations that stream data. If you
@@ -57,6 +91,7 @@ path/to/db>
 test/fixtures/db/>
 ```
 
+# REPL COMMANDS
 ```
 path/to/db>help()
 
@@ -86,10 +121,8 @@ defaults. Command line arguments will override the default settings in this file
 
 ```json
 {
-  "level": {
-    "createIfMissing": true,
-    "encoding": "json"
-  }
+  "createIfMissing": true,
+  "encoding": "json"
 }
 
 ```

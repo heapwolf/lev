@@ -9,6 +9,22 @@ var readline = require('readline');
 var deleteRange = require("level-delete-range");
 
 var levelup = require('levelup');
+
+//
+// there is no location if the first character is a hyphen.
+//
+var location = process.argv[2];
+
+if (location && location[0] === '-') {
+  location = process.cwd();
+}
+else if (location) {
+  location = process.argv.splice(2, 1);
+}
+else {
+  location = process.cwd();
+}
+
 var argv = require('optimist').argv;
 
 var levelcfg = {}; 
@@ -16,17 +32,12 @@ var replcfg = {};
 var r; // repl instance.
 var httpserver; 
 var tcpserver;
+var defaults = {};
 
 try {
 
-  var defaults = JSON.parse(fs.readFileSync(path.join(process.env['HOME'], '.lev'))) || {};
+  defaults = JSON.parse(fs.readFileSync(path.join(process.env['HOME'], '.lev'))) || {};
 
-  levelcfg.createIfMissing = defaults.level.createIfMissing;
-  levelcfg.errorIfExists = defaults.level.errorIfExists;
-  levelcfg.compression = defaults.level.compression;
-  levelcfg.encoding = defaults.level.encoding;
-  levelcfg.keyEncoding = defaults.level.keyEncoding;
-  levelcfg.valueEncoding = defaults.level.valueEncoding;
 }
 catch(ex) {
 
@@ -38,12 +49,17 @@ catch(ex) {
 //
 // take the take the cli argument, else the config file value, if none  use a default.
 //
-levelcfg.createIfMissing = argv.c || argv.createIfMissing || levelcfg.createIfMissing || false;
-levelcfg.errorIfExists = argv.errorIfExists || levelcfg.errorIfExists || false;
-levelcfg.compression = argv.compression || levelcfg.compression || true;
-levelcfg.encoding = argv.encoding || levelcfg.encoding || 'utf8';
-levelcfg.keyEncoding = argv.keyEncoding || levelcfg.keyEncoding || 'utf8';
-levelcfg.valueEncoding = argv.valueEncoding || levelcfg.valueEncoding || 'utf8';
+levelcfg.createIfMissing = argv.c || argv.createIfMissing || defaults.createIfMissing || false;
+levelcfg.errorIfExists = argv.errorIfExists || defaults.errorIfExists || false;
+levelcfg.compression = argv.compression || defaults.compression || true;
+levelcfg.keyEncoding = argv.keyEncoding || defaults.keyEncoding || 'json';
+levelcfg.valueEncoding = argv.valueEncoding || defaults.valueEncoding || 'json';
+levelcfg.encoding = argv.encoding || defaults.encoding || 'json';
+
+if (levelcfg.encoding) {
+  levelcfg.keyEncoding = levelcfg.encoding;
+  levelcfg.valueEncoding = levelcfg.encoding;
+}
 
 var write = function(d) {
   replcfg.output.write('\r\n' + d + '\r\n');
@@ -55,10 +71,9 @@ var escapeRegExp = function escapeRegExp(str) {
 
 var cachedkeys = [];
 var databases = {};
-var location = argv._[0] || process.cwd();
 var commands = {};
 
-var ps;
+var ps = '';
 
 if (location.length > 15) {
   ps = '...' + location.slice(-15);
@@ -91,7 +106,7 @@ if (!argv.h && !argv.help) {
       process.exit(1);
     }
 
-    levelup(location, levelcfg, function(err, db) {
+    levelup(path.join(location), levelcfg, function(err, db) {
 
       if (err) {
         return write(err);
@@ -249,82 +264,72 @@ function lev(db) {
 
   commands.read = {
 
-    description: 'Read a range of keys and values from the database.',
-    usage: [''],
+    description: 'Stream a range of keys and values.',
+    usage: [
+      'read([limit], [start], [end])',
+      'Where limit is a number, start and end are strings.'
+    ],
     shorthand: 'r',
     cli: true,
-    method: function(start, end, limit) {
+    method: function() {
 
       var opts = {};
       var quiet = false;
 
       //
-      // the options may be specified from the cli.
+      // for internal use, to refresh the key cache
       //
-      if (argv.r) {
+      if (typeof arguments[0] === 'boolean') {
 
-        if (argv._[1]) {
-          opts.start = argv.r;
-        }
-
-        if (argv._[2]) {
-          opts.end = argv._[2] || argv.start + '~';
-        }
-
-        if (argv.limit || argv.l) {
-          opts.limit = argv.limit || argv.l;
-        }
-
-        if (argv.reverse) {
-          opts.reverse = argv.reverse
-        }
-      }
-      else if (typeof arguments[0] === 'boolean') {
         cachedkeys = [];
         opts.values = false;
         quiet = true;
       }
+      else {
 
-      //
-      // the first argument may be the limit
-      //
-      else if (typeof arguments[0] === 'number' && arguments[0] !== -1) {
-        opts.limit = arguments[0];
-      }
+        var values = argv.v || argv.values;
+        var keys = argv.k || argv.keys;
+        var start;
+        var end;
 
-      //
-      // the first argument may be an options object.
-      //
-      else if (typeof arguments[0] === 'object') {
-        opts = arguments[0];
-      }
-
-      //
-      // the options may be as specified in the method's signature
-      //
-      else if (start !== -1) {
-
-        if (start || argv.start) {
-          opts.start = start || argv.start;
+        if (this.type) {
+          opts.values = !!values || this.type === 'values';
+          opts.keys = !!keys || this.type === 'keys';
         }
 
-        if (end || argv.end) {
-          opts.end = end || argv.end || opts.start + '~';
+        var arg1 = keys || values || argv.r || arguments[0];
+
+        if (typeof arg1 === 'number') {
+          opts.limit = arg1;
+
+          start = argv._[0] || arguments[1];
+          end = argv._[1] || arguments[2];
+
+          start && (opts.start = start);
+          end && (opts.end = end);
+        }
+        else if (typeof arg1 === 'string') {
+          opts.start = arg1;
+
+          end = argv._[0] || arguments[1];
+          end && (opts.end = end);
+        }
+        else if (typeof arg1 === 'object') {
+          opts = arg1;
         }
       }
 
-      if (typeof opts.limit === 'undefined' && 
-        quiet === false && 
-        start !== -1 &&
-        !argv.r) {
-
-        return write(
-          'Result set may be quite large.\r\n' +
-          'Consider specifying a limit or `-1` for all items.'
-        );
+      if (argv.l || argv.limit) {
+        opts.limit = argv.l || argv.limit;
       }
 
-      var buffer = [];
+      if (argv.rev) {
+        opts.reverse = argv.rev;
+      }
+
+      if (quiet === false) {
+        write('[');
+      }
 
       db.readStream(opts).on('data', function(data) {
 
@@ -332,13 +337,15 @@ function lev(db) {
           cachedkeys.push(data.key || data);
         }
 
-        buffer.push(data);
+        if (quiet === false) {
+          write(JSON.stringify(data));
+        }
 
       })
       .on('end', function() {
 
-        if (buffer.length && quiet === false) {
-          write(JSON.stringify(buffer, 2, 2));
+        if (quiet === false) {
+          write(']');
         }
 
         if (r) {
@@ -348,51 +355,6 @@ function lev(db) {
     }
   };
 
-  //
-  // key and value methods parse their args the same way.
-  // this function is a little crazy. there should be a better way to 
-  // do this. but then again, maybe it just needs to be a little crazy.
-  //
-  function keyValArgsParse(opts) {
-
-    opts = opts || {};
-
-    var args = argv.k || argv.keys || argv.v || argv.value;
-
-    if (typeof opts === 'number') {
-
-      opts = { limit: opts };
-    }
-    else if (typeof opts === 'string') {
-
-      opts = {
-        start: opts,
-        end: arguments[1] || opts + '~',
-        limit: arguments[2] || -1
-      }
-    }
-    else if (args) {
-
-      if (typeof args === 'number') {
-
-        opts.limit = args;
-        argv._[1] && (opts.start = argv._[1]);
-        argv._[2] && (opts.end = argv._[2] || opts.start + '~');
-      }
-      else if (argv[1]) {
-        opts.limit = -1;
-        argv[1] && (opts.start = argv[1]);
-        argv._[1] && (opts.end = argv._[1] || opts.start + '~');
-      }
-      else {
-        opts.limit = -1;
-        opts.start = args;
-        argv._[1] && (opts.end = argv._[1] || opts.start + '~');
-      }
-    }
-    return opts || {};
-  }
-
   commands.keys = {
     
     description: 'Read a range of keys from the database.',
@@ -400,12 +362,7 @@ function lev(db) {
     shorthand: 'k',
     cli: true,
     method: function() {
-
-      var opts = keyValArgsParse.apply(null, arguments);
-      opts.values = false;
-      opts.keys = true;
-
-      commands.read.method(opts);
+      commands.read.method.apply({ type: 'keys' }, arguments);
     }
   };
 
@@ -416,12 +373,7 @@ function lev(db) {
     shorthand: 'v',
     cli: true,
     method: function() {
-
-      var opts = keyValArgsParse.apply(null, arguments);
-      opts.keys = false;
-      opts.values = true;
-
-      commands.read.method(opts);
+      commands.read.method.apply({ type: 'values' }, arguments);
     }
   };
 
@@ -726,7 +678,7 @@ function lev(db) {
     }
 
     var _complete = r.complete;
-    var cmdRE = /\b(?:get|del|put|range)\s*\((?:['"])(.*)/;
+    var cmdRE = /\b(?:get|del|delr|put|range)\s*\((?:['"])(.*)/;
     var useRE = /\b(?:use)\s*\((?:['"])(.*)/;
 
     r.complete = function(line, callback) {
@@ -759,4 +711,3 @@ function lev(db) {
     };
   }
 }
-

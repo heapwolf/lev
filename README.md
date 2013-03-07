@@ -41,11 +41,11 @@ Insert data for a specific key.
 ### `-d <key>, --del <key>`
 Delete the data for a particular key.
 
-### `--D <key>, --delr [key]`
+### `--D <key> [key], --delr <key> [key]`
 Delete a range starting from the first key until the second key if one is
 provided.
 
-### `-a, --size <key> <key>`
+### `-a, --size <key> [key]`
 An approximate number of bytes of used by the given range.
 
 ### `--valueEncoding`

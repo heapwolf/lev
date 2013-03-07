@@ -41,7 +41,7 @@ Insert data for a specific key.
 ### `-d <key>, --del <key>`
 Delete the data for a particular key.
 
-### `--D <key> [key], --delr <key> [key]`
+### `-D <key> [key], --delr <key> [key]`
 Delete a range starting from the first key until the second key if one is
 provided.
 

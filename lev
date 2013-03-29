@@ -56,7 +56,7 @@ levelcfg.keyEncoding = argv.keyEncoding || defaults.keyEncoding || 'json';
 levelcfg.valueEncoding = argv.valueEncoding || defaults.valueEncoding || 'json';
 levelcfg.encoding = argv.encoding || defaults.encoding || 'json';
 
-if (levelcfg.encoding) {
+if (argv.encoding || defaults.encoding) {
   levelcfg.keyEncoding = levelcfg.encoding;
   levelcfg.valueEncoding = levelcfg.encoding;
 }

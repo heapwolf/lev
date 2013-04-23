@@ -18,10 +18,7 @@ var location = process.argv[2];
 if (location && location[0] === '-') {
   location = process.cwd();
 }
-else if (location) {
-  location = process.argv.splice(2, 1);
-}
-else {
+else if (!location) {
   location = process.cwd();
 }
 

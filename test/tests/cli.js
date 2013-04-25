@@ -1,7 +1,6 @@
 var spawn = require('child_process').spawn;
 var path = require('path');
 var levelup = require('levelup');
-var test = require('tap').test;
 var p = path.join(__dirname, '..', 'fixtures', 'db');
 
 var options = {};

@@ -18,10 +18,7 @@ var location = process.argv[2];
 if (location && location[0] === '-') {
   location = process.cwd();
 }
-else if (location) {
-  location = process.argv.splice(2, 1);
-}
-else {
+else if (!location) {
   location = process.cwd();
 }
 
@@ -56,7 +53,7 @@ levelcfg.keyEncoding = argv.keyEncoding || defaults.keyEncoding || 'json';
 levelcfg.valueEncoding = argv.valueEncoding || defaults.valueEncoding || 'json';
 levelcfg.encoding = argv.encoding || defaults.encoding || 'json';
 
-if (levelcfg.encoding) {
+if (argv.encoding || defaults.encoding) {
   levelcfg.keyEncoding = levelcfg.encoding;
   levelcfg.valueEncoding = levelcfg.encoding;
 }
@@ -657,6 +654,8 @@ function lev(db) {
       path.join(__dirname, 'node_modules', 'levelup', 'package.json')
     ).version;
 
+    var historyFile = path.join(__dirname, '.lev_history');
+
     write([
       
       'compression = ' + levelcfg.compression,
@@ -670,12 +669,31 @@ function lev(db) {
 
     r = repl.start(replcfg);
 
+    var historyStream = fs.createWriteStream(historyFile, { flags: 'a+' });
+
+    r.rli.on('line', function (line) {
+      historyStream.write(line + '\n');
+    });
+
     // build a cache of the keys.
     commands.read.method(true);
     
     for (var command in commands) {
       r.context[command] = commands[command].method;
     }
+
+    try {
+
+      var history = fs.readFileSync(historyFile, 'utf8');
+      var historyLines = history.split('\n');
+
+      historyLines.forEach(function(line) {
+        if (line) {
+          r.rli.history.unshift(line);
+        }
+      });
+
+    } catch($) {}
 
     var _complete = r.complete;
     var cmdRE = /\b(?:get|del|delr|put|range)\s*\((?:['"])(.*)/;

@@ -1,5 +1,6 @@
 # SYNOPSIS
-A commandline tool and repl (with autocomplete and suggestions for keys) for `leveldb`.
+A commandline tool and REPL (with autocomplete and suggestions for keys) for
+`leveldb`. Automatically saves and reloads REPL history.
 
 # INSTALLATION
 ```bash
@@ -20,7 +21,7 @@ lev -r 10 'bazz' 'zomg'
 # CLI OPTIONS
 
 ### `-r, --read [limit] [start] [end]`
-Stream a range of keys and values. Where limit is a number, start and end are 
+Stream a range of keys and values. Where limit is a number, start and end are
 strings.
 
 ### `--rev`
@@ -112,8 +113,9 @@ path/to/db>
 ```
 
 ## Default Configuration
-You can create a `.lev` file in your home directory and it will be used to set the 
-defaults. Command line arguments will override the default settings in this file.
+You can create a `.lev` file in your home directory and it will be used to set 
+the defaults. Command line arguments will override the default settings in this 
+file.
 
 ```json
 {

@@ -18,3 +18,4 @@ test/fixtures/db/*
 node_modules/*
 
 npm-debug.log
+.lev_history

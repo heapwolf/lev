@@ -5,6 +5,7 @@ var fs = require('fs');
 var path = require('path');
 var http = require('http');
 var net = require('net');
+var multilevel = require('multilevel');
 var es = require('event-stream');
 var readline = require('readline');
 var deleteRange = require("level-delete-range");

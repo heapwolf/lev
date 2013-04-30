@@ -50,6 +50,8 @@ module.exports = {
         
         if (err) { return test.fail(err); }
 
+        console.log(test_key2)
+
         db.get(test_key2, function (err, value) {
           
           if (err) { return test.fail(err); }

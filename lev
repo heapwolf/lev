@@ -5,6 +5,7 @@ var fs = require('fs');
 var path = require('path');
 var http = require('http');
 var net = require('net');
+var es = require('event-stream');
 var readline = require('readline');
 var deleteRange = require("level-delete-range");
 
@@ -57,6 +58,8 @@ if (argv.encoding || defaults.encoding) {
   levelcfg.keyEncoding = levelcfg.encoding;
   levelcfg.valueEncoding = levelcfg.encoding;
 }
+
+console.log(levelcfg)
 
 var write = function(d) {
   replcfg.output.write('\r\n' + d + '\r\n');
@@ -273,6 +276,15 @@ function lev(db) {
       var opts = {};
       var quiet = false;
 
+      for (arg in argv) {
+        if (argv[arg] === 'true') {
+          argv[arg] = true;
+        }
+        else if (argv[arg] === 'false') {
+          argv[arg] = false;
+        }
+      }
+
       //
       // for internal use, to refresh the key cache
       //
@@ -283,52 +295,16 @@ function lev(db) {
         quiet = true;
       }
       else {
-
-        var values = argv.v || argv.values;
-        var keys = argv.k || argv.keys;
-        var start;
-        var end;
-
-        if (this.type) {
-          opts.values = !!values || this.type === 'values';
-          opts.keys = !!keys || this.type === 'keys';
-        }
-
-        var arg1 = keys || values || argv.r || arguments[0];
-
-        if (typeof arg1 === 'number') {
-          opts.limit = arg1;
-
-          start = argv._[0] || arguments[1];
-          end = argv._[1] || arguments[2];
-
-          start && (opts.start = start);
-          end && (opts.end = end);
-        }
-        else if (typeof arg1 === 'string') {
-          opts.start = arg1;
-
-          end = argv._[0] || arguments[1];
-          end && (opts.end = end);
-        }
-        else if (typeof arg1 === 'object') {
-          opts = arg1;
-        }
-      }
-
-      if (argv.l || argv.limit) {
-        opts.limit = argv.l || argv.limit;
-      }
-
-      if (argv.rev) {
-        opts.reverse = argv.rev;
+        opts = argv;
       }
 
       if (quiet === false) {
         write('[');
       }
 
-      db.readStream(opts).on('data', function(data) {
+      console.log(opts)
+
+      db.createReadStream(opts).on('data', function(data) {
 
         if (quiet === true && !data.key && (!data.value || data.key)) {
           cachedkeys.push(data.key || data);
@@ -351,6 +327,37 @@ function lev(db) {
       });
     }
   };
+
+  commands.write = {
+
+    description: 'A writable stream.',
+    usage: [
+      'write([object])',
+      'Where object is an object literal with `key` and `value` members.'
+    ],
+    shorthand: 'w',
+    cli: true,
+    method: function() {
+
+      if (!db._ws) {
+
+        db._ws = db.createWriteStream();
+      }
+
+      if (arguments[0] || (argv.w && argv.w !== true)) {
+
+        db._ws.write(arguments[0] || argv.w);
+      }
+      else {
+
+        process.stdin.resume();
+        process.stdin
+          .pipe(es.split())
+          .pipe(es.parse())
+          .pipe(db._ws);
+      }
+    }
+  };  
 
   commands.keys = {
     

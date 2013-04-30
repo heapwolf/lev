@@ -7,7 +7,8 @@
   "dependencies": {
     "levelup": "0.8.0",
     "optimist": "0.3.4",
-    "level-delete-range": "0.1.0"
+    "level-delete-range": "0.1.0",
+    "event-stream": "~3.0.14"
   },
   "devDependencies": {
     "tap": "0.3.3",

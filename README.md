@@ -19,60 +19,7 @@ lev -r 10 'bazz' 'zomg'
 ```
 
 # CLI OPTIONS
-
-### `-w [json]`
-Write key/values to the database. new line delimited. For example
-
-```bash
-lev path/to/db -w '{ "key": "hello", "value": "world" }'
-```
-
-```bash
-echo '{ "key": "hello", "value": "world" }' | lev path/to/db -w
-```
-
-```bash
-echo '{ "key": "hello", "value": "world" }
-{ "key": "foo", "value": "bar" }' | lev path/to/db -w
-```
-
-### `-r, --read [limit] [start] [end]`
-Stream a range of keys and values. Where limit is a number, start and end are
-strings.
-
-### `--rev`
-Return the values in reverse.
-
-### `-k [limit] [start] [end], --keys [limit] [start] [end]`
-Stream a range of keys.
-
-### `-v [limit] [start] [end], --values [limit] [start] [end]`
-Stream a range of values.
-
-### `-g <key>, --get <key>`
-Fetch the data for a specific key.
-
-### `-p <key>, --put <key>`
-Insert data for a specific key.
-
-### `-d <key>, --del <key>`
-Delete the data for a particular key.
-
-### `-D <key> [key], --delr <key> [key]`
-Delete a range starting from the first key until the second key if one is
-provided.
-
-### `-a, --size <key> [key]`
-An approximate number of bytes of used by the given range.
-
-### `--valueEncoding`
-Specify encoding type for just the values.
-
-### `--keyEncoding`
-Specify encoding type for just the keys.
-
-### `--encoding`
-Specify encoding for both.
+Options match the API. ie `lev /path/to/db --keys --start 'b' --end 'e' --limit 2`
 
 ## REPL
 The REPL has autocomplete and suggestion lists for database keys. Type 

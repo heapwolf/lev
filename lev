@@ -5,24 +5,13 @@ var fs = require('fs');
 var path = require('path');
 var http = require('http');
 var net = require('net');
-var es = require('event-stream');
+var tls = require('tls');
 var readline = require('readline');
+
 var deleteRange = require("level-delete-range");
-
 var levelup = require('levelup');
-
-//
-// there is no location if the first character is a hyphen.
-//
-var location = process.argv[2];
-
-if (location && location[0] === '-') {
-  location = process.cwd();
-}
-else if (!location) {
-  location = process.cwd();
-}
-
+var es = require('event-stream');
+var multilevel = require('multilevel');
 var argv = require('optimist').argv;
 
 var levelcfg = {}; 
@@ -72,6 +61,7 @@ var databases = {};
 var commands = {};
 
 var ps = '';
+var location = (argv.host && argv.host + ':' + argv.port) || argv._[0] || process.cwd();
 
 if (location.length > 15) {
   ps = '...' + location.slice(-15);
@@ -87,36 +77,44 @@ replcfg = {
   ignoreUndefined: true
 };
 
-//
-// if the user is not asking for help, ensure we are pointed at a valid
-// location.
-//
-if (!argv.h && !argv.help) {
-
-  fs.stat(path.join(location, 'LOCK'), function(err) {
-    
-    if (levelcfg.createIfMissing === false && err) {
-
-      write(
-        'no leveldb found in this directory (specify a directory' +
-        ' or use `-c` to create a new database).'
-      );
-      process.exit(1);
-    }
-
-    levelup(path.join(location), levelcfg, function(err, db) {
-
-      if (err) {
-        return write(err);
-      }
-      lev(db);
-    });
-
-  });
-}
-else {
+if (argv.h && argv.help) {
   lev();
 }
+else {
+
+  if (argv.port) {
+
+    var protocol = argv.protocol === 'tls' ? tls : net;
+
+    var db = multilevel.client();
+    db.pipe(protocol.connect(argv)).pipe(db);
+    lev(db);
+  }
+  else {
+
+    fs.stat(path.join(location, 'LOCK'), function(err) {
+      
+      if (levelcfg.createIfMissing === false && err) {
+
+        write(
+          'no leveldb found in this directory (specify a directory' +
+          ' or use `-c` to create a new database).'
+        );
+        process.exit(1);
+      }
+
+      levelup(path.join(location), levelcfg, function(err, db) {
+
+        if (err) {
+          return write(err);
+        }
+        lev(db);
+      });
+
+    });
+  }
+}
+
 
 function lev(db) {
 
@@ -293,7 +291,14 @@ function lev(db) {
         quiet = true;
       }
       else {
-        opts = argv;
+        opts = arguments[0] || argv;
+      }
+
+      if (this.type === 'keys') {
+        opts.values = false;
+      }
+      else if (this.type === 'values') {
+        opts.keys = false;
       }
 
       if (quiet === false) {

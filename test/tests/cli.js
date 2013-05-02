@@ -18,11 +18,12 @@ const test_value4 = 'testvalue4';
 //
 // force some defaults in case user as a `.lev` file in their home directory.
 //
-var defaultargs = ['--format', 'false', '--utf8'];
+var defaultargs = ['--format', 'false', '--encoding', 'utf8'];
 
 module.exports = {
 
-  "put to specific location (verbose argument)": function(test, next) {
+  'put to specific location (verbose argument)':
+  function(test, next) {
 
     test.plan(2);
 
@@ -50,8 +51,6 @@ module.exports = {
         
         if (err) { return test.fail(err); }
 
-        console.log(test_key2)
-
         db.get(test_key2, function (err, value) {
           
           if (err) { return test.fail(err); }
@@ -63,7 +62,8 @@ module.exports = {
     });
   },
 
-  "put to specific location": function(test, next) {
+  'put to specific location': 
+  function(test, next) {
 
     test.plan(2);
 
@@ -99,7 +99,8 @@ module.exports = {
     });
   },
 
-  "put from within the current working dir": function(test, next) {
+  'put from within the current working dir': 
+  function(test, next) {
 
     test.plan(2);
 
@@ -135,7 +136,8 @@ module.exports = {
     });
   },
 
-  "put from within the current working dir (verbose argument)": function(test, next) {
+  'put from within the current working dir (verbose argument)': 
+  function(test, next) {
 
     test.plan(2);
 
@@ -171,7 +173,8 @@ module.exports = {
     });
   },
 
-  "get from specific location": function(test, next) {
+  'get from specific location': 
+  function(test, next) {
 
     test.plan(1);
 
@@ -194,7 +197,8 @@ module.exports = {
     });
   },
 
-  "get from specific location (verbose argument)": function(test, next) {
+  'get from specific location (verbose argument)': 
+  function(test, next) {
 
     test.plan(1);
 
@@ -217,7 +221,8 @@ module.exports = {
     });
   },
 
-  "delete a key": function(test, next) {
+  'delete a key': 
+  function(test, next) {
 
     test.plan(2);
 

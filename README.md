@@ -34,7 +34,7 @@ keyEncoding = utf8
 valueEncoding = utf8
 levelup version = 0.6.0
 
-path/to/db>read(2)
+path/to/db>read({ limit: 2 })
 path/to/db>
 [
   {

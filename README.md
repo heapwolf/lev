@@ -1,6 +1,12 @@
 # SYNOPSIS
-A commandline tool and REPL (with autocomplete and suggestions for keys) for
-`leveldb`. Automatically saves and reloads REPL history.
+Commandline [LevelDB][0] management.
+
+# FEATURES
+- Command line data management
+- Interactive data management
+- REPL features auto-complete and suggestions for keys.
+- REPL automatically saves and reloads REPL history.
+- Connect to a network enabled database via [multilevel][1].
 
 # INSTALLATION
 ```bash
@@ -93,3 +99,6 @@ file.
 }
 
 ```
+
+[0]:https://github.com/rvagg/node-levelup
+[1]:https://github.com/juliangruber/multilevel

@@ -10,12 +10,12 @@ $npm install lev -g
 # CLI EXAMPLES
 Get the first 10 keys in the database, the path is optional.
 ```js
-lev path/to/db -k 10
+lev path/to/db --keys --limit 10
 ```
 
 Get the first ten records starting at `bazz` and ending at `zomg`.
 ```js
-lev -r 10 'bazz' 'zomg'
+lev path/to/db --read --limit 10 --start 'bazz' --end 'zomg'
 ```
 
 # CLI OPTIONS
@@ -23,9 +23,7 @@ Options match the API. ie `lev /path/to/db --keys --start 'b' --end 'e' --limit 
 
 ## REPL
 The REPL has autocomplete and suggestion lists for database keys. Type 
-`get('...<tab>`, `put('...<tab>`, etc. Because some databases can be extremely
-large, you must specify a value when doing operations that stream data. If you
-are absolutely sure you want everything you can specify `-1` as a value.
+`get('...<tab>`, `put('...<tab>`, etc.
 
 ```bash
 >lev path/to/db
@@ -49,6 +47,13 @@ path/to/db>
   }
 ]
 path/to/db>
+```
+
+Level can also be run against a database over the network by using the `--port`
+and `--host` options. For example
+
+```bash
+>lev --port 9099 --host localhost
 ```
 
 # REPL COMMANDS

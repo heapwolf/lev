@@ -59,8 +59,6 @@ if (argv.encoding || defaults.encoding) {
   levelcfg.valueEncoding = levelcfg.encoding;
 }
 
-console.log(levelcfg)
-
 var write = function(d) {
   replcfg.output.write('\r\n' + d + '\r\n');
 };
@@ -301,8 +299,6 @@ function lev(db) {
       if (quiet === false) {
         write('[');
       }
-
-      console.log(opts)
 
       db.createReadStream(opts).on('data', function(data) {
 

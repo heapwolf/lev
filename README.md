@@ -27,6 +27,10 @@ lev path/to/db --read --limit 10 --start 'bazz' --end 'zomg'
 # CLI OPTIONS
 Options match the API. ie `lev /path/to/db --keys --start 'b' --end 'e' --limit 2`
 
+For connecting to a [multilevel][1] enabled instance, specify the `port` parameter:
+
+`lev --port 1337 --keys ...`
+
 ## REPL
 The REPL has autocomplete and suggestion lists for database keys. Type 
 `get('...<tab>`, `put('...<tab>`, etc.

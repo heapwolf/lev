@@ -1,73 +1,74 @@
 #!/usr/bin/env node
 
-var repl = require('repl');
-var fs = require('fs');
-var path = require('path');
-var http = require('http');
-var net = require('net');
-var tls = require('tls');
-var readline = require('readline');
+var repl = require('repl')
+var fs = require('fs')
+var path = require('path')
+var http = require('http')
+var net = require('net')
+var tls = require('tls')
+var readline = require('readline')
 
-var deleteRange = require("level-delete-range");
-var levelup = require('levelup');
-var es = require('event-stream');
-var multilevel = require('multilevel');
-var argv = require('optimist').argv;
+var deleteRange = require("level-delete-range")
+var levelup = require('levelup')
+var es = require('event-stream')
+var multilevel = require('multilevel')
+var argv = require('optimist').argv
 
-var levelcfg = {}; 
-var replcfg = {};
-var r; // repl instance.
-var httpserver; 
-var tcpserver;
-var defaults = {};
+var levelcfg = {} 
+var replcfg = {}
+var r // repl instance.
+var httpserver 
+var tcpserver
+var defaults = {}
 
 try {
 
-  defaults = JSON.parse(fs.readFileSync(path.join(process.env['HOME'], '.lev'))) || {};
+  defaults = JSON.parse(fs.readFileSync(path.join(process.env['HOME'], '.lev'))) || {}
 
 }
 catch(ex) {
 
   if (ex.name === 'SyntaxError') {
-    console.log('error parsing settings file [%s]', ex.message);
+    console.log('error parsing settings file [%s]', ex.message)
   }
 }
 
 //
 // take the take the cli argument, else the config file value, if none  use a default.
 //
-levelcfg.createIfMissing = argv.c || argv.createIfMissing || defaults.createIfMissing || false;
-levelcfg.errorIfExists = argv.errorIfExists || defaults.errorIfExists || false;
-levelcfg.compression = argv.compression || defaults.compression || true;
-levelcfg.keyEncoding = argv.keyEncoding || defaults.keyEncoding || 'json';
-levelcfg.valueEncoding = argv.valueEncoding || defaults.valueEncoding || 'json';
-levelcfg.encoding = argv.encoding || defaults.encoding || 'json';
+levelcfg.createIfMissing = argv.c || argv.createIfMissing || defaults.createIfMissing || false
+levelcfg.errorIfExists = argv.errorIfExists || defaults.errorIfExists || false
+levelcfg.compression = argv.compression || defaults.compression || true
+levelcfg.keyEncoding = argv.keyEncoding || defaults.keyEncoding || 'json'
+levelcfg.valueEncoding = argv.valueEncoding || defaults.valueEncoding || 'json'
+levelcfg.encoding = argv.encoding || defaults.encoding || 'json'
 
 if (argv.encoding || defaults.encoding) {
-  levelcfg.keyEncoding = levelcfg.encoding;
-  levelcfg.valueEncoding = levelcfg.encoding;
+  levelcfg.keyEncoding = levelcfg.encoding
+  levelcfg.valueEncoding = levelcfg.encoding
 }
 
 var write = function(d) {
-  replcfg.output.write('\r\n' + d + '\r\n');
-};
+  replcfg.output.write('\r\n' + d + '\r\n')
+}
 
 var escapeRegExp = function escapeRegExp(str) {
-  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
-};
+  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&")
+}
 
-var cachedkeys = [];
-var databases = {};
-var commands = {};
+var cachedkeys = []
+var databases = {}
+var commands = {}
+var connection
 
-var ps = '';
-var location = (argv.host && argv.host + ':' + argv.port) || argv._[0] || process.cwd();
+var ps = ''
+var location = (argv.host && argv.host + ':' + argv.port) || argv._[0] || process.cwd()
 
 if (location.length > 15) {
-  ps = '...' + location.slice(-15);
+  ps = '...' + location.slice(-15)
 }
 else {
-  ps = location;
+  ps = location
 }
 
 replcfg = {
@@ -75,20 +76,21 @@ replcfg = {
   input: process.stdin,
   output: process.stdout,
   ignoreUndefined: true
-};
+}
 
 if (argv.h && argv.help) {
-  lev();
+  lev()
 }
 else {
 
   if (argv.port) {
 
-    var protocol = argv.protocol === 'tls' ? tls : net;
+    var protocol = argv.protocol === 'tls' ? tls : net
+    var db = multilevel.client()
 
-    var db = multilevel.client();
-    db.pipe(protocol.connect(argv)).pipe(db);
-    lev(db);
+    connection = protocol.connect(argv)
+    db.pipe(connection).pipe(db)
+    lev(db)
   }
   else {
 
@@ -99,19 +101,19 @@ else {
         write(
           'no leveldb found in this directory (specify a directory' +
           ' or use `-c` to create a new database).'
-        );
-        process.exit(1);
+        )
+        process.exit(1)
       }
 
       levelup(path.join(location), levelcfg, function(err, db) {
 
         if (err) {
-          return write(err);
+          return write(err)
         }
-        lev(db);
-      });
+        lev(db)
+      })
 
-    });
+    })
   }
 }
 
@@ -119,41 +121,32 @@ else {
 function lev(db) {
 
   if (db) {
-    databases[location] = db;
+    databases[location] = db
   }
 
   var cleanup = function() {
 
-    Object.keys(databases).forEach(function(name) {
+    if (connection) {
+      connection.destroy()
+      connection.end()
+    }
+  }
 
-      if (databases[name].close) {
-        databases[name].close(function(err) {
-          
-          write('Attempting to close: ' + name);
-
-          if (err) {
-            write(err);
-          }
-        });        
-      }
-    });
-  };
-
-  process.on('exit', cleanup);
-  process.on('SIGINT', cleanup);
+  process.on('exit', cleanup)
+  process.on('SIGINT', cleanup)
 
   process.on('uncaughtException', function(err) {
 
     if (err.type === 'unexpected_token') {
-      write('Encoding not compatible with ' + levelcfg.encoding);
+      write('Encoding not compatible with ' + levelcfg.encoding)
     }
     else {
-      write(err);
+      write(err)
     }
 
-    cleanup();
-    process.exit(1);
-  });
+    cleanup()
+    process.exit(1)
+  })
 
   commands.config = {
 
@@ -161,9 +154,9 @@ function lev(db) {
     usage: [''],
     cli: false,
     method: function(encoding, includeKeys) {
-      return levelcfg;
+      return levelcfg
     }
-  };
+  }
 
   commands.pwd = {
 
@@ -171,9 +164,9 @@ function lev(db) {
     usage: [''],
     cli: false,
     method: function() {
-      return location;
+      return location
     }
-  };
+  }
 
   commands.create = {
 
@@ -182,15 +175,15 @@ function lev(db) {
     cli: false,
     method: function(loc, opts, callback) {
 
-      opts = opts || {};
+      opts = opts || {}
 
-      opts.createIfMissing = true;
+      opts.createIfMissing = true
 
-      location = loc;
-      databases[loc] = levelup(loc, opts, callback);
-      return Object.keys(databases);
+      location = loc
+      databases[loc] = levelup(loc, opts, callback)
+      return Object.keys(databases)
     }
-  };
+  }
 
   commands.close = {
 
@@ -200,13 +193,13 @@ function lev(db) {
     method: function() {
 
       db.close(function(err) {
-        write(err || 'OK');
-        r.displayPrompt();
-      });
+        write(err || 'OK')
+        r.displayPrompt()
+      })
 
-      return 'Closing...';
+      return 'Closing...'
     }
-  };
+  }
 
   commands.open = {
 
@@ -216,12 +209,12 @@ function lev(db) {
     method: function() {
 
       db.open(function(err) {
-        write(!err ? 'OK' : err);
-        r.displayPrompt();
-      });
-      return 'Opening...';
+        write(!err ? 'OK' : err)
+        r.displayPrompt()
+      })
+      return 'Opening...'
     }
-  };
+  }
 
   commands.use = {
 
@@ -234,18 +227,18 @@ function lev(db) {
     method: function(db) {
 
       if (!databases[db]) {
-        return commands.create.method(db);
+        return commands.create.method(db)
       }
 
       if (!db) {
-        return db;
+        return db
       }
 
-      location = db;
-      db = databases[db];
-      return Object.keys(databases);
+      location = db
+      db = databases[db]
+      return Object.keys(databases)
     }
-  };
+  }
 
   commands.ls = {
 
@@ -254,9 +247,9 @@ function lev(db) {
     cli: false,
     method: function(db) {
 
-      return Object.keys(databases);
+      return Object.keys(databases)
     }
-  };
+  }
 
   commands.read = {
 
@@ -269,15 +262,15 @@ function lev(db) {
     cli: true,
     method: function() {
 
-      var opts = {};
-      var quiet = false;
+      var opts = {}
+      var quiet = false
 
       for (arg in argv) {
         if (argv[arg] === 'true') {
-          argv[arg] = true;
+          argv[arg] = true
         }
         else if (argv[arg] === 'false') {
-          argv[arg] = false;
+          argv[arg] = false
         }
       }
 
@@ -286,48 +279,52 @@ function lev(db) {
       //
       if (typeof arguments[0] === 'boolean') {
 
-        cachedkeys = [];
-        opts.values = false;
-        quiet = true;
+        cachedkeys = []
+        opts.values = false
+        quiet = true
       }
       else {
-        opts = arguments[0] || argv;
+        opts = arguments[0] || argv
       }
 
       if (this.type === 'keys') {
-        opts.values = false;
+        opts.values = false
+        opts.keys = true
       }
       else if (this.type === 'values') {
-        opts.keys = false;
+        opts.keys = false
+        opts.values = true
       }
 
+      console.log(opts)
+
       if (quiet === false) {
-        write('[');
+        write('[')
       }
 
       db.createReadStream(opts).on('data', function(data) {
 
         if (quiet === true && !data.key && (!data.value || data.key)) {
-          cachedkeys.push(data.key || data);
+          cachedkeys.push(data.key || data)
         }
 
         if (quiet === false) {
-          write(JSON.stringify(data));
+          write(JSON.stringify(data))
         }
 
       })
       .on('end', function() {
 
         if (quiet === false) {
-          write(']');
+          write(']')
         }
 
         if (r) {
-          r.displayPrompt();
+          r.displayPrompt()
         }
-      });
+      })
     }
-  };
+  }
 
   commands.write = {
 
@@ -342,23 +339,23 @@ function lev(db) {
 
       if (!db._ws) {
 
-        db._ws = db.createWriteStream();
+        db._ws = db.createWriteStream()
       }
 
       if (arguments[0] || (argv.w && argv.w !== true)) {
 
-        db._ws.write(arguments[0] || argv.w);
+        db._ws.write(arguments[0] || argv.w)
       }
       else {
 
-        process.stdin.resume();
+        process.stdin.resume()
         process.stdin
           .pipe(es.split())
           .pipe(es.parse())
-          .pipe(db._ws);
+          .pipe(db._ws)
       }
     }
-  };  
+  }  
 
   commands.keys = {
     
@@ -367,9 +364,9 @@ function lev(db) {
     shorthand: 'k',
     cli: true,
     method: function() {
-      commands.read.method.apply({ type: 'keys' }, arguments);
+      commands.read.method.apply({ type: 'keys' }, arguments)
     }
-  };
+  }
 
   commands.values = {
 
@@ -378,9 +375,9 @@ function lev(db) {
     shorthand: 'v',
     cli: true,
     method: function() {
-      commands.read.method.apply({ type: 'values' }, arguments);
+      commands.read.method.apply({ type: 'values' }, arguments)
     }
-  };
+  }
 
   commands.get = {
 
@@ -390,39 +387,39 @@ function lev(db) {
     cli: true,
     method: function(key, cb) {
 
-      key = key || argv.get || argv.g;
+      key = key || argv.get || argv.g
 
       if (typeof key === 'string') {
-        key = key.replace(/\r\n/g, '');
+        key = key.replace(/\r\n/g, '')
       }
 
       if (!key) { 
-        return new Error('missing argument'); 
+        return new Error('missing argument') 
       }
 
       db.get(key, function(err, data) {
 
         if (err) {
-          write(err);
-          return cb && cb(err);
+          write(err)
+          return cb && cb(err)
         }
 
         if (levelcfg.encoding === 'json') {
-          data = JSON.stringify(data, true, 2);
+          data = JSON.stringify(data, true, 2)
         }
         else {
-          data = String(data);
+          data = String(data)
         }
 
-        write(data);
+        write(data)
 
         if (r) {
-          r.displayPrompt();
-          cb && cb(null, data);            
+          r.displayPrompt()
+          cb && cb(null, data)            
         }
-      });
+      })
     }
-  };
+  }
 
   commands.put = {
 
@@ -432,39 +429,39 @@ function lev(db) {
     cli: true,
     method: function(key, value, cb) {
 
-      key = key || argv.put || argv.p;
-      value = value || argv._[1];
+      key = key || argv.put || argv.p
+      value = value || argv._[1]
 
       if (typeof value === 'string') {
-        value = value.replace(/\r\n/g, '');
+        value = value.replace(/\r\n/g, '')
       }
 
       if (!key) { 
-        return new Error('missing argument'); 
+        return new Error('missing argument') 
       }
 
       db.put(key, value, function(err) {
 
         if (err) {
-          write(err);
-          return cb && cb(err);
+          write(err)
+          return cb && cb(err)
         }
 
-        write('OK');
+        write('OK')
 
         if (r) {
-          r.displayPrompt();
+          r.displayPrompt()
           
           //
           // refresh the cached keys.
           //
-          commands.read.method(true);
+          commands.read.method(true)
 
-          return cb && cb(null);          
+          return cb && cb(null)          
         }
-      });
+      })
     }
-  };
+  }
 
   commands.del = {
 
@@ -474,31 +471,31 @@ function lev(db) {
     cli: true,
     method: function(key, opts, cb) {
 
-      key = key || argv.del || argv.d;
+      key = key || argv.del || argv.d
 
       if (!key) { 
-        return new Error('missing argument'); 
+        return new Error('missing argument') 
       }
 
       db.del(key, function(err) {
         if (err) {
-          return cb && cb(err);
+          return cb && cb(err)
         }
 
-        write('OK');
+        write('OK')
         
         if (r) {
-          r.displayPrompt();
+          r.displayPrompt()
 
           //
           // refresh the cached keys.
           //
-          commands.read.method(true);
-          return cb && cb(null);            
+          commands.read.method(true)
+          return cb && cb(null)            
         }
-      });
+      })
     }
-  };
+  }
 
   commands.delr = {
     description: 'Delete a range from the database.',
@@ -510,31 +507,34 @@ function lev(db) {
     cli: true,
     method: function(start, end, cb) {
 
+      start = start || argv.start
+      end = end || argv.end
+
       if (!start) {
-        return write('A start key must be specified.');
+        return write('A start key must be specified.')
       }
 
-      var opts = {};
-      opts.start = start;
+      var opts = {}
+      opts.start = start
 
       if (end) {
-        opts.end = end;
+        opts.end = end
       }
 
       deleteRange(db, opts, function (err) {
 
         if (err && cb) {
-          return cb(err);
+          return cb(err)
         }
 
         if (r) {
-          commands.read.method(true);
-          return cb && cb(null);
+          commands.read.method(true)
+          return cb && cb(null)
         }
-      });
+      })
 
     }
-  };
+  }
 
   commands.size = {
 
@@ -544,27 +544,27 @@ function lev(db) {
     cli: true,
     method: function(start, end, cb) {
 
-      start = start || argv._[1] || ' ';
-      end = end || argv._[2] || '~';
+      start = start || argv._[1] || ' '
+      end = end || argv._[2] || '~'
 
       if (!cb) {
         cb = function (err, size) { 
 
           if (err) {
-            return write(err);
+            return write(err)
           }
 
-          write(size);
+          write(size)
           
           if (r) {
-            r.displayPrompt();
+            r.displayPrompt()
           }
-        };
+        }
       }
 
-      db.approximateSize(start, end, cb);
+      db.approximateSize(start, end, cb)
     }
-  };
+  }
 
   commands.help = {
     description: 'This help',
@@ -574,68 +574,68 @@ function lev(db) {
     method: function(method) {
 
       if (method) {
-        write(commands[method].usage.join('\r\n'));
+        write(commands[method].usage.join('\r\n'))
       }
 
       //
       // TODO: get individual help
       //
 
-      var longestkey = 0, padding = ' ';
+      var longestkey = 0, padding = ' '
 
       for (var command in commands) {
         if (command.length > longestkey) {
-          longestkey = command.length;
+          longestkey = command.length
         }
       }
 
       while(longestkey) {
-        padding += ' ';
-        longestkey--;
+        padding += ' '
+        longestkey--
       }
 
-      var help = [];
+      var help = []
 
       for (var command in commands) {
-        var c = commands[command];
-        var s = '  ';
+        var c = commands[command]
+        var s = '  '
         
         if (argv.help || argv.h) {
           if (!c.cli) {
-            continue;
+            continue
           }
 
           if (c.shorthand === '') {
-            s = '  ';
+            s = '  '
           }
           else {
-            s = (c.shorthand && '-' + c.shorthand);
+            s = (c.shorthand && '-' + c.shorthand)
           }
 
-          command = '--' + command;
+          command = '--' + command
         }
         else {
-          command = command + '()';
+          command = command + '()'
         }
 
         help.push([
           s,
           command + padding.slice(command.length-2),
           c.description
-        ].join(' '));
+        ].join(' '))
       }
 
-      write(help.join('\r\n'));
+      write(help.join('\r\n'))
     }
-  };
+  }
 
-  var shorthandmap = {};
-  var cliop;
+  var shorthandmap = {}
+  var cliop
 
   for (var command in commands) {
-    var s = commands[command].shorthand;
+    var s = commands[command].shorthand
     if (s) {
-      shorthandmap[s] = command;
+      shorthandmap[s] = command
     }
   }
 
@@ -644,15 +644,15 @@ function lev(db) {
   //
   for (var command in argv) {
 
-    var c;
+    var c
 
     if (shorthandmap[command]) {
-      cliop = true;
-      commands[shorthandmap[command]].method();
+      cliop = true
+      commands[shorthandmap[command]].method()
     }
     else if (commands[command] && commands[command].cli) {
-      cliop = true;
-      commands[command].method();
+      cliop = true
+      commands[command].method()
     }
   }
 
@@ -660,9 +660,9 @@ function lev(db) {
     
     var levelupVersion = require(
       path.join(__dirname, 'node_modules', 'levelup', 'package.json')
-    ).version;
+    ).version
 
-    var historyFile = path.join(__dirname, '.lev_history');
+    var historyFile = path.join(__dirname, '.lev_history')
 
     write([
       
@@ -673,67 +673,74 @@ function lev(db) {
       'levelup version = ' + levelupVersion,
       ''
 
-    ].join('\r\n'));
+    ].join('\r\n'))
 
-    r = repl.start(replcfg);
+    r = repl.start(replcfg)
 
-    var historyStream = fs.createWriteStream(historyFile, { flags: 'a+' });
+    var exit = r.commands['.exit'].action
+
+    r.commands['.exit'].action = function() {
+      console.log('exiting')
+      exit()
+    }
+
+    var historyStream = fs.createWriteStream(historyFile, { flags: 'a+' })
 
     r.rli.on('line', function (line) {
-      historyStream.write(line + '\n');
-    });
+      historyStream.write(line + '\n')
+    })
 
     // build a cache of the keys.
-    commands.read.method(true);
+    commands.read.method(true)
     
     for (var command in commands) {
-      r.context[command] = commands[command].method;
+      r.context[command] = commands[command].method
     }
 
     try {
 
-      var history = fs.readFileSync(historyFile, 'utf8');
-      var historyLines = history.split('\n');
+      var history = fs.readFileSync(historyFile, 'utf8')
+      var historyLines = history.split('\n')
 
       historyLines.forEach(function(line) {
         if (line) {
-          r.rli.history.unshift(line);
+          r.rli.history.unshift(line)
         }
-      });
+      })
 
     } catch($) {}
 
-    var _complete = r.complete;
-    var cmdRE = /\b(?:get|del|delr|put|range)\s*\((?:['"])(.*)/;
-    var useRE = /\b(?:use)\s*\((?:['"])(.*)/;
+    var _complete = r.complete
+    var cmdRE = /\b(?:get|del|delr|put|range)\s*\((?:['"])(.*)/
+    var useRE = /\b(?:use)\s*\((?:['"])(.*)/
 
     r.complete = function(line, callback) {
 
-      var match = line.match(cmdRE);
-      var use = line.match(useRE);
-      var filter = [];
+      var match = line.match(cmdRE)
+      var use = line.match(useRE)
+      var filter = []
 
       if (use) {
-        return _complete.call(this, 'require(\'' + use[1], arguments[1]);
+        return _complete.call(this, 'require(\'' + use[1], arguments[1])
       }
 
       else if (match) {
 
         if (cachedkeys.length === 0) {
-          callback(null, [[], '']);
+          callback(null, [[], ''])
         }
         else {
           
           filter = cachedkeys.filter(function(e) {
-            return e.match(new RegExp('^' + escapeRegExp(match[1]) + '(?:.*?)$'));
-          });
+            return e.match(new RegExp('^' + escapeRegExp(match[1]) + '(?:.*?)$'))
+          })
         }
 
-        var list = (filter.length > 0) ? filter : cachedkeys;
-        return callback(null, [list, match[1]]);
+        var list = (filter.length > 0) ? filter : cachedkeys
+        return callback(null, [list, match[1]])
       }
-      _complete.apply(this, arguments);
+      _complete.apply(this, arguments)
 
-    };
+    }
   }
 }

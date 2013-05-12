@@ -453,6 +453,10 @@ function lev(db) {
         return new Error('missing argument') 
       }
 
+      if (levelcfg.valueEncoding === 'binary') {
+        value = new Buffer(value)
+      }
+
       db.put(key, value, function(err) {
 
         if (err) {

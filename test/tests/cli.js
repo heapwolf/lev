@@ -16,7 +16,7 @@ const test_value3 = 'testvalue3';
 const test_key4 = 'testkey4';
 const test_value4 = 'testvalue4';
 const test_key5 = 'testkey5';
-const test_value5 = new Buffer([1, 2, 3]);
+const test_value5 = 'testvalue5';
 
 //
 // force some defaults in case user as a `.lev` file in their home directory.
@@ -176,6 +176,46 @@ module.exports = {
     });
   },
 
+  'put binary data':
+  function(test, next) {
+
+    test.plan(2);
+
+    var args = [
+      p, '-p', test_key5, test_value5, '--keyEncoding=utf8',
+      '--valueEncoding=binary'
+    ];
+
+    var test_cp5 = spawn(lev, args);
+    var test_output5 = '';
+
+    test_cp5.stderr.on('data', function (data) {
+      test.fail(String(data));
+    });
+
+    test_cp5.stdout.on('data', function (data) {
+      test_output5 += data;
+    });
+
+    test_cp5.on('exit', function (data) {
+
+      test.equals(test_output5, OK);
+
+      levelup(p, { valueEncoding : 'binary' }, function (err, db) {
+
+        if (err) { return test.fail(err); }
+
+        db.get(test_key5, function (err, value) {
+
+          if (err) { return test.fail(err); }
+          test.equals(value.toString(), test_value5);
+          db.close();
+          next();
+        });
+      });
+    });
+  },
+
   'get from specific location': 
   function(test, next) {
 
@@ -244,7 +284,7 @@ module.exports = {
 
     test_cp5.on('exit', function (data) {
     
-      test.equals(test_output5, '\r\nbinary\r\n');
+      test.equals(test_output5, '\r\n' + test_value5 + '\r\n');
     });
   },
 

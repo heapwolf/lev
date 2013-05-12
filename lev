@@ -78,7 +78,7 @@ replcfg = {
   ignoreUndefined: true
 }
 
-if (argv.h && argv.help) {
+if (argv.h || argv.help) {
   lev()
 }
 else {

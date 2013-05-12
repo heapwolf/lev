@@ -660,7 +660,7 @@ function lev(db) {
       path.join(__dirname, 'node_modules', 'levelup', 'package.json')
     ).version
 
-    var historyFile = path.join(__dirname, '.lev_history')
+    var historyFile = path.join(location, '.lev_history')
 
     write([
       

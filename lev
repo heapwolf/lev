@@ -265,7 +265,7 @@ function lev(db) {
       var opts = {}
       var quiet = false
 
-      for (arg in argv) {
+      for (var arg in argv) {
         if (argv[arg] === 'true') {
           argv[arg] = true
         }

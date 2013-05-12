@@ -300,10 +300,24 @@ function lev(db) {
         write('[')
       }
 
+      // prepare `obj` for JSON.stringify
+      function prepare (obj) {
+        return Buffer.isBuffer(obj)
+          ? obj.toString()
+          : obj;
+      }
+
       db.createReadStream(opts).on('data', function(data) {
 
         if (quiet === true && !data.key && (!data.value || data.key)) {
           cachedkeys.push(data.key || data)
+        }
+
+        if (opts.keys != false && opts.values != false) {
+          data.key = prepare(data.key)
+          data.value = prepare(data.value)
+        } else {
+          data = prepare(data)
         }
 
         if (quiet === false) {
@@ -402,10 +416,11 @@ function lev(db) {
           return cb && cb(err)
         }
 
-        if (levelcfg.encoding === 'json') {
+        if (levelcfg.valueEncoding === 'json') {
           data = JSON.stringify(data, true, 2)
-        }
-        else {
+        } else if (Buffer.isBuffer(data)) {
+          data = data.toString()
+        } else {
           data = String(data)
         }
 

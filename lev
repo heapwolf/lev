@@ -49,7 +49,7 @@ if (argv.encoding || defaults.encoding) {
 }
 
 var write = function(d) {
-  replcfg.output.write('\r\n' + d + '\r\n')
+  replcfg.output.write('\n' + d + '\n')
 }
 
 var escapeRegExp = function escapeRegExp(str) {
@@ -63,6 +63,7 @@ var connection
 
 var ps = ''
 var location = (argv.host && argv.host + ':' + argv.port) || argv._[0] || process.cwd()
+var objects = argv.objects
 
 if (location.length > 15) {
   ps = '...' + location.slice(-15)
@@ -295,9 +296,9 @@ function lev(db) {
         opts.keys = false
         opts.values = true
       }
-
-      if (quiet === false) {
-        write('[')
+      else {
+        opts.keys = true
+        opts.values = true
       }
 
       // prepare `obj` for JSON.stringify
@@ -313,7 +314,7 @@ function lev(db) {
           cachedkeys.push(data.key || data)
         }
 
-        if (opts.keys != false && opts.values != false) {
+        if (opts.keys !== false && opts.values !== false) {
           data.key = prepare(data.key)
           data.value = prepare(data.value)
         } else {
@@ -326,10 +327,6 @@ function lev(db) {
 
       })
       .on('end', function() {
-
-        if (quiet === false) {
-          write(']')
-        }
 
         if (r) {
           r.displayPrompt()

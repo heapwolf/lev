@@ -307,7 +307,6 @@ function lev(db) {
       db.createReadStream(opts).on('data', function(data) {
 
         if (quiet === true && !data.key && (!data.value || data.key)) {
-          console.log('x')
           cachedkeys.push(data.key || data)
         }
 

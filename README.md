@@ -32,63 +32,38 @@ For connecting to a [multilevel][1] enabled instance, specify the `port` paramet
 `lev --port 1337 --keys ...`
 
 ## REPL
-The REPL has autocomplete and suggestion lists for database keys. Type 
-`get('...<tab>`, `put('...<tab>`, etc.
-
+Start the REPL by providing only a path and/or database settings
 ```bash
->lev path/to/db
+$lev path/to/db
+```
+Commands in the REPL also match the API. But wait! There are a few special commands 
+that make common operations faster, easier and more fun. The following `keys` and 
+`sublevels` are arbitrary and for the purpose of this example only.
 
-compression = true
-encoding = utf8
-keyEncoding = utf8
-valueEncoding = utf8
-levelup version = 0.6.0
-
-path/to/db>read({ limit: 2 })
-path/to/db>
-[
-  {
-    "key": "foo",
-    "value": "bar"
-  },
-  {
-    "key": "fuzz",
-    "value": "bazz"
-  }
-]
-path/to/db>
+#### `ls` A listing of keys in the current sublevel
+```
+>ls
+81!6dfb2cf92a411302b97a24cb977c1bd981711c
+81!8613357d10da3ae2d295a53137b750d6b324b5
+c9!25e7700452f8f269898cee9c18925350a6ef24
+8c!699404e9c54349c32f4ca88a9ceea9382cffe9
+>
 ```
 
-Level can also be run against a database over the network by using the `--port`
-and `--host` options. For example
-
-```bash
->lev --port 9099 --host localhost
+#### `get` Get the value of a key and inpspect it if possible (supports tab completion).
+```
+>get 81!6dfb2cf92a411302b97a24cb977c1bd981711c
+{
+  "greeting": "hello, world!"
+}
+>
 ```
 
-# REPL COMMANDS
+#### `cd` create or change into a sublevel (supports `cd ..` and `cd /`).
 ```
-path/to/db>help()
-
-   config()  Get the current configuration object
-   pwd()     Path of the current working database
-   create()  Return a new instance of leveldb
-   close()   Close an instance of leveldb
-   open()    Open an instance of leveldb
-   use()     Select the current database to use
-   ls()      list of databases
-   read()    Read a range of keys and values from the database.
-   write()   A writable stream for key value objects.
-   keys()    Read a range of keys from the database.
-   values()  Read a range of values from the database.
-   get()     Fetch data from the store.
-   put()     Insert data into the store.
-   del()     Remove data from the store.
-   delr()    Delete a range from the database.
-   size()    An approximate number of bytes of used by the given range.
-   help()    This help
-
-path/to/db>
+>cd 97a24cb977c1bd9
+/97a24cb977c1bd9>ls
+c9!b5db29d11c6556b7d5b7ffe272dcefec9edae6
 ```
 
 ## Default Configuration

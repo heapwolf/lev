@@ -1,32 +1,28 @@
 #!/usr/bin/env node
 
-var repl = require('repl')
 var fs = require('fs')
 var path = require('path')
 var net = require('net')
 var readline = require('readline')
+
+var argv = require('optimist').argv
 var deepmerge = require('deepmerge')
 var reconnect = require('reconnect')
 
+var Sublevel = require('level-sublevel')
+var multilevel = require('multilevel')
 var deleteRange = require("level-delete-range")
 var level = require('level')
 
-var es = require('event-stream')
-var Sublevel = require('level-sublevel')
-var multilevel = require('multilevel')
-var argv = require('optimist').argv
+var utils = require('./lib/utils')
+var cli = require('./lib/cli')
+var repl = require('./lib/repl')
 
-var defaults
 var db
-var currentdb
-var REPL
-
-var location = (typeof argv.location === 'string' && 
-  argv.location || argv._[0])
 
 try {
-  var sessingsFile = path.join(process.env['HOME'], '.lev')
-  defaults = JSON.parse(fs.readFileSync(sessingsFile)) || {}
+  var settingsFile = path.join(process.env['HOME'], '.lev')
+  var defaults = JSON.parse(fs.readFileSync(settingsFile)) || {}
   argv = deepmerge(argv, defaults)
 }
 catch(ex) {
@@ -48,196 +44,12 @@ if (argv.port) {
   }).listen(argv.port)
 }
 else {
-  db = level(location, argv)
+  db = level(utils.location(), argv)
 }
 
 db = Sublevel(db)
-currentdb = db
 
-var escapeRegExp = function escapeRegExp(str) {
-  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&")
-}
+var args = utils.filter(Object.keys(argv), Object.keys(db))
 
-var cachedkeys = []
-var sublevels = {}
-var replcfg = {
-  prompt: '>',
-  input: process.stdin,
-  output: process.stdout,
-  ignoreUndefined: true
-}
+args.length > 0 ? cli(argv, db) : repl(argv, db)
 
-var out = function(err, val) {
-  if (val && typeof val === 'object') {
-    val = JSON.stringify(val)
-  }
-  process.stdout.write((err || val || 'OK') + '\r\n')
-  if (REPL) {
-    REPL.displayPrompt()
-  }
-}
-
-var cacheKeys = function() {
-
-}
-
-var exec = function(opts) {
-
-  for(var opt in opts) {
-    if (currentdb[opt]) {
-
-      if (opt === 'sub') {
-        if (typeof opts.put === 'boolean') return
-        currentdb = db.sublevel.apply(db, opts.sub)
-      }
-
-      if (opt === 'put') {
-
-        if (typeof opts.put === 'boolean') return
-        return currentdb.put(opts.key || opts.put, opts.value, out)
-
-      } else if (opt === 'get') {
-
-        if (typeof opts.get === 'boolean') return
-        return currentdb.get(opts.key || opts.get, out)
-
-      } else if (opt === 'createReadStream') {
-
-        return currentdb.createReadStream(opts)
-          .pipe(es.stringify())
-          .pipe(process.stdout)
-
-      } else if (opt === 'createWriteStream') {
-
-        process.stdin.resume()
-        return process.stdin
-          .pipe(es.split())
-          .pipe(es.parse())
-          .pipe(currentdb.createWriteStream(opts))
-
-      } else if (opt === 'batch') {
-
-        return currentdb.batch(opts.batch, out)
-
-      } else if (opt === 'del') {
-
-        return currentdb.del(opts.key || opts.del, out)
-      }
-      else if (opt !== 'location') {
-
-        if (typeof currentdb[opt] === 'function') {
-          currentdb[opt](opts)
-        }
-        else {
-          out(null, currentdb[opt])
-        }
-      }
-    }
-  }
-}
-
-var methods = Object.keys(argv).filter(function(n) {
-  if(Object.keys(db).indexOf(n) === -1) {
-    return false
-  }
-  return true
-})
-
-if (methods.length > 0) {
-  return exec(argv)
-}
-
-//
-// REPL
-//
-
-try {
-  var historyFile = path.join(location, '.lev_history')
-  var history = fs.readFileSync(historyFile, 'utf8')
-  var historyLines = history.split('\n')
-
-  historyLines.forEach(function(line) {
-    if (line) {
-      r.rli.history.unshift(line)
-    }
-  })
-
-} catch(ex) {}
-
-REPL = repl.start(replcfg)
-var exit = REPL.commands['.exit'].action
-
-REPL.commands['.exit'].action = function() {
-  console.log('exiting')
-  return exit()
-}
-
-REPL.commands['.help'].action = function() {
-  console.log(Object.keys(REPL.context))
-  REPL.displayPrompt()
-}
-
-var methods = [
-  'get', 
-  'put',
-  'del', 
-  'batch', 
-  'sublevels', 
-  'sublevel'
-]
-
-methods.forEach(function(name) {
-
-  if (name === 'sublevel') {
-    return REPL.context.sublevel = function() {
-      currentdb = db.sublevel.apply(db, arguments)
-      out('OK')
-    }
-  }
-
-  REPL.context[name] = function() {
-
-    if (typeof currentdb[name] === 'function') {
-
-      var args = Array.prototype.slice.call(arguments)
-
-      if (typeof args[args.length-1] !== 'function') {
-        args.push(out)
-      }
-      return currentdb[name].apply(currentdb, args)
-    }
-    else {
-      return currentdb[name]
-    }
-  }
-})
-
-var historyStream = fs.createWriteStream(historyFile, { flags: 'a+' })
-
-REPL.rli.on('line', function (line) {
-  historyStream.write(line + '\n')
-})
-
-var compl = REPL.complete
-var cmdRE = /\b(?:get|del|delr|put)\s*\((?:['"])(.*)/
-
-REPL.complete = function(line, callback) {
-
-  var match = line.match(cmdRE)
-  var filter = []
-
-  if (match) {
-
-    if (cachedkeys.length === 0) {
-      callback(null, [[], ''])
-    } else {
-      filter = cachedkeys.filter(function(e) {
-        return e.match(new RegExp('^' + escapeRegExp(match[1]) + '(?:.*?)$'))
-      })
-    }
-
-    var list = (filter.length > 0) ? filter : cachedkeys
-    return callback(null, [list, match[1]])
-  }
-  compl.apply(this, arguments)
-}

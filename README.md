@@ -32,15 +32,17 @@ For connecting to a [multilevel][1] enabled instance, specify the `port` paramet
 `lev --port 1337 --keys ...`
 
 ## REPL
-Start the REPL by providing only a path and/or database settings
+Start the REPL by providing only a path or host and port
 ```bash
 $lev path/to/db
 ```
-Commands in the REPL also match the API. But wait! There are a few special commands 
+
+Commands in the REPL also match the API. But wait! There are a subset of commands 
 that make common operations faster, easier and more fun. The following `keys` and 
 `sublevels` are arbitrary and for the purpose of this example only.
 
 #### `ls` A listing of keys in the current sublevel
+Supports tab completion, same as the javascript function.
 ```
 >ls
 81!6dfb2cf92a411302b97a24cb977c1bd981711c
@@ -50,7 +52,9 @@ c9!25e7700452f8f269898cee9c18925350a6ef24
 >
 ```
 
-#### `get` Get the value of a key and inpspect it if possible (supports tab completion).
+#### `get` Get the value of a key and inpspect it if possible 
+Supports tab completion, same as the javascript function.
+
 ```
 >get 81!6dfb2cf92a411302b97a24cb977c1bd981711c
 {
@@ -59,7 +63,10 @@ c9!25e7700452f8f269898cee9c18925350a6ef24
 >
 ```
 
-#### `cd` create or change into a sublevel (supports `cd ..` and `cd /`).
+#### `cd` create or change into a sublevel 
+Supports `cd ..` to navigate down a level. `cd /` to navigate to the root of the database.
+And `cd foo/bar/bazz` to navigate up to a deeply nested sublevel in the database.
+
 ```
 >cd 97a24cb977c1bd9
 /97a24cb977c1bd9>ls

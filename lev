@@ -15,8 +15,6 @@ var deleteRange = require("level-delete-range")
 var level = require('level')
 
 var utils = require('./lib/utils')
-var cli = require('./lib/cli')
-var repl = require('./lib/repl')
 
 var db
 
@@ -51,5 +49,6 @@ db = Sublevel(db)
 
 var args = utils.filter(Object.keys(argv), Object.keys(db))
 
-args.length > 0 ? cli(argv, db) : repl(argv, db)
-
+args.length > 0 
+  ? require('./lib/cli')(argv, db) 
+  : require('./lib/repl')(argv, db)

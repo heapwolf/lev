@@ -13,8 +13,7 @@
     "multilevel": "~4.1.0",
     "reconnect": "~1.5.0",
     "level-sublevel": "~4.7.0",
-    "tabulate": "0.0.1",
-    "errno": "0.0.3"
+    "tabulate": "0.0.1"
   },
   "devDependencies": {
     "tap": "0.3.3",

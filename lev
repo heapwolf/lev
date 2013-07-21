@@ -47,7 +47,17 @@ else {
 
 db = Sublevel(db)
 
-var args = utils.filter(Object.keys(argv), Object.keys(db))
+var allCommands = ['get', 'delr']
+
+var args = utils.filter(Object.keys(argv), allCommands.concat(Object.keys(db)))
+
+db.on('EncodingError', function(a, b, c) {
+  console.log(a, b, c)
+})
+
+db.on('error', function(a, b, c) {
+  console.log(a, b, c)
+})
 
 args.length > 0 
   ? require('./lib/cli')(argv, db) 

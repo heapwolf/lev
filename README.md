@@ -24,6 +24,11 @@ Get the first ten records starting at `bazz` and ending at `zomg`.
 lev path/to/db --read --limit 10 --start 'bazz' --end 'zomg'
 ```
 
+Get the key `welcome` from inside the 2 sublevels deep
+```js
+lev ./db --cd greetings/en --get 'welcome'
+```
+
 # CLI OPTIONS
 Options match the API. ie `lev /path/to/db --keys --start 'b' --end 'e' --limit 2`
 
@@ -63,7 +68,7 @@ Supports tab completion, same as the javascript function.
 >
 ```
 
-#### `cd` create or change into a sublevel 
+#### `cd` create or change into a sublevel
 Supports `cd ..` to navigate down a level. `cd /` to navigate to the root of the database.
 And `cd foo/bar/bazz` to navigate up to a deeply nested sublevel in the database.
 

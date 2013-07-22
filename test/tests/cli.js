@@ -5,7 +5,7 @@ var p = path.join(__dirname, '..', 'fixtures', 'db');
 var lev = path.join(__dirname, '..', '..', 'lev');
 
 var options = {};
-var OK = '\r\nOK\r\n';
+var OK = '\nOK\n';
 
 const test_key1 = 'testkey1';
 const test_value1 = 'testvalue1';
@@ -236,7 +236,7 @@ module.exports = {
 
     test_cp1.on('exit', function (data) {
 
-      test.equals(test_output1, '\r\n' + test_value1 + '\r\n');
+      test.equals(test_output1, '\n' + test_value1 + '\n');
     });
   },
 
@@ -260,7 +260,7 @@ module.exports = {
 
     test_cp2.on('exit', function (data) {
   
-      test.equals(test_output2, '\r\n' + test_value2 + '\r\n');
+      test.equals(test_output2, '\n' + test_value2 + '\n');
     });
   },
 
@@ -284,7 +284,7 @@ module.exports = {
 
     test_cp5.on('exit', function (data) {
     
-      test.equals(test_output5, '\r\n' + test_value5 + '\r\n');
+      test.equals(test_output5, '\n' + test_value5 + '\n');
     });
   },
 

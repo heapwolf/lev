@@ -24,6 +24,11 @@ Get the first ten records starting at `bazz` and ending at `zomg`.
 lev path/to/db --read --limit 10 --start 'bazz' --end 'zomg'
 ```
 
+Get the key `welcome` from inside the 2 sublevels deep
+```js
+lev ./db --cd greetings/en --get 'welcome'
+```
+
 # CLI OPTIONS
 Options match the API. ie `lev /path/to/db --keys --start 'b' --end 'e' --limit 2`
 
@@ -32,63 +37,45 @@ For connecting to a [multilevel][1] enabled instance, specify the `port` paramet
 `lev --port 1337 --keys ...`
 
 ## REPL
-The REPL has autocomplete and suggestion lists for database keys. Type 
-`get('...<tab>`, `put('...<tab>`, etc.
-
+Start the REPL by providing only a path or host and port
 ```bash
->lev path/to/db
-
-compression = true
-encoding = utf8
-keyEncoding = utf8
-valueEncoding = utf8
-levelup version = 0.6.0
-
-path/to/db>read({ limit: 2 })
-path/to/db>
-[
-  {
-    "key": "foo",
-    "value": "bar"
-  },
-  {
-    "key": "fuzz",
-    "value": "bazz"
-  }
-]
-path/to/db>
+$lev path/to/db
 ```
 
-Level can also be run against a database over the network by using the `--port`
-and `--host` options. For example
+Commands in the REPL also match the API. But wait! There are a subset of commands 
+that make common operations faster, easier and more fun. The following `keys` and 
+`sublevels` are arbitrary and for the purpose of this example only.
 
-```bash
->lev --port 9099 --host localhost
+#### `ls` A listing of keys in the current sublevel
+Supports tab completion, same as the javascript function.
+```
+>ls
+81!6dfb2cf92a411302b97a24cb977c1bd981711c
+81!8613357d10da3ae2d295a53137b750d6b324b5
+c9!25e7700452f8f269898cee9c18925350a6ef24
+8c!699404e9c54349c32f4ca88a9ceea9382cffe9
+>
 ```
 
-# REPL COMMANDS
+#### `get` Get the value of a key and inpspect it if possible 
+Supports tab completion, same as the javascript function.
+
 ```
-path/to/db>help()
+>get 81!6dfb2cf92a411302b97a24cb977c1bd981711c
+{
+  "greeting": "hello, world!"
+}
+>
+```
 
-   config()  Get the current configuration object
-   pwd()     Path of the current working database
-   create()  Return a new instance of leveldb
-   close()   Close an instance of leveldb
-   open()    Open an instance of leveldb
-   use()     Select the current database to use
-   ls()      list of databases
-   read()    Read a range of keys and values from the database.
-   write()   A writable stream for key value objects.
-   keys()    Read a range of keys from the database.
-   values()  Read a range of values from the database.
-   get()     Fetch data from the store.
-   put()     Insert data into the store.
-   del()     Remove data from the store.
-   delr()    Delete a range from the database.
-   size()    An approximate number of bytes of used by the given range.
-   help()    This help
+#### `cd` create or change into a sublevel
+Supports `cd ..` to navigate down a level. `cd /` to navigate to the root of the database.
+And `cd foo/bar/bazz` to navigate up to a deeply nested sublevel in the database.
 
-path/to/db>
+```
+>cd 97a24cb977c1bd9
+/97a24cb977c1bd9>ls
+c9!b5db29d11c6556b7d5b7ffe272dcefec9edae6
 ```
 
 ## Default Configuration

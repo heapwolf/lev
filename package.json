@@ -1,15 +1,19 @@
 {
   "name": "lev",
-  "version": "0.3.6",
+  "version": "1.0.0",
   "bin": "./lev",
   "description": "commandline and REPL access for leveldb",
   "main": "lev",
   "dependencies": {
-    "levelup": "0.8.0",
+    "level": "~0.10.0",
     "optimist": "0.3.4",
+    "deepmerge": "~0.2.5",
     "level-delete-range": "0.1.0",
     "event-stream": "~3.0.14",
-    "multilevel": "~3.1.0"
+    "multilevel": "~4.1.0",
+    "reconnect": "~1.5.0",
+    "level-sublevel": "~4.7.0",
+    "tabulate": "0.0.1"
   },
   "devDependencies": {
     "tap": "0.3.3",

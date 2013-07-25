@@ -16,7 +16,7 @@
     "tabulate": "0.0.1"
   },
   "devDependencies": {
-    "tap": "0.3.3",
+    "tap": "0.4.3",
     "async": "0.1.22"
   },
   "scripts": {

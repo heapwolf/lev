@@ -11,7 +11,7 @@ var filter = process.argv[2] || null
 var caseFilter = process.argv[3] || null
 
 async.forEach(
-  fs.readdirSync(pathname), 
+ fs.readdirSync(pathname), 
   function (name, nextfile) {
 
     if (filter && name.indexOf(filter) < 0) { return; }
@@ -20,14 +20,17 @@ async.forEach(
 
       var basename = path.basename(name, '.js')
       var rawfile = path.join(pathname, basename)
-      var tests = require(rawfile)
+      console.log(rawfile)
+	 var tests = require(rawfile)
 
       async.forEach(
         Object.keys(tests),
         function(testname, nexttest) {
           if (!caseFilter || test.indexOf(caseFilter) > -1) {
             tap(testname, function(test) {
-              tests[testname].call(null, test, nexttest)
+              console.log(nextfile);
+		  console.log(testname);	
+		  tests[testname].call(null, test, nexttest)
             });
           }
         },

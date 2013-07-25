@@ -25,17 +25,14 @@ var defaultargs = ['--format', 'false', '--encoding', 'utf8'];
 
 module.exports = {
 
-  'put to specific location (verbose argument)':
+  'put to specific location (Verbose)':
   function(test, next) {
-    console.log("called tests in cli.js"); 
     test.plan(2);
 
     //
     // for the first test, create the database in case it does not exist.
     //
     var args = [p, '--put', test_key1, '--value', test_value1, '-c'].concat(defaultargs);
-    console.log("spawning level " + lev);
-    console.log("with args : " + args); 
     var test_cp1 = spawn(lev, args);
     var test_output1 = '';
 
@@ -48,7 +45,6 @@ module.exports = {
     });
 
     test_cp1.on('exit', function (data) {
-      console.log("child exit");      
       levelup(path.join(__dirname, '..', 'fixtures', 'db'), options, function (err, db) {
         
       test.equals( test_output1, OK);
@@ -64,14 +60,12 @@ module.exports = {
     });
   },
 
-   'put to specific location': 
+   'put to specific location without -c (Verbose)': 
    function(test, next) {
 
      test.plan(2);
   ///  var args = [p, '-p', test_key1, test_value1].concat(defaultargs);
-     var args = [p, '--put', test_key2, '--value', test_value2, '-c'].concat(defaultargs);
-   console.log("spawning level " + lev);
-    console.log("with args : " + args); 
+     var args = [p, '--put', test_key2, '--value', test_value2 ].concat(defaultargs);
     
      var test_cp1 = spawn(lev, args);
      var test_output1 = '';
@@ -81,7 +75,6 @@ module.exports = {
      });
 
      test_cp1.stdout.on('data', function (data) {
-       console.log(test_output1.toString())
        test_output1 += data;
      });
 
@@ -89,7 +82,6 @@ module.exports = {
 	
      //	test.ok(false, "path params fail", "#TODO params need debugging");
        test.equals(test_output1, OK);
-       console.log("Got test value : " +  test_output1);
        levelup(p, options, function (err, db) {
       
          if (err) { return test.fail(err); }
@@ -104,14 +96,14 @@ module.exports = {
        });
      });
    },
-
+/*
    'put from within the current working dir': 
    function(test, next) {
 
      test.plan(2);
 
     // var args = [p, '--put', test_key3, test_value3].concat(defaultargs);
-     var args = [p, '--put', test_key3, '--value', test_value3, '-c'].concat(defaultargs);
+     var args = [p, '-p', test_key3, test_value3].concat(defaultargs);
 	
      var test_cp3 = spawn(lev, args, { cwd: p });
      var test_output3 = '';
@@ -142,8 +134,8 @@ module.exports = {
        });
      });
  },
-
-   'put from within the current working dir (verbose argument)': 
+*/
+   'put from within the current working dir (Verbose)': 
    function(test, next) {
 
      test.plan(2);
@@ -182,16 +174,17 @@ module.exports = {
      });
    },
 
-   'put binary data':
+   'put binary data (Verbose)':
    function(test, next) {
 
      test.plan(2);
-
+/*
      var args = [
        p, '-p', test_key5, test_value5, '--keyEncoding=utf8',
        '--valueEncoding=binary'
-     ];
-	var args = [p, '--put', test_key5, '--value', test_value5, '-c', '--keyEncoding=utf8', '--valueEncoding=binary' ] //.concat(defaultargs);
+     ];*/
+
+     var args = [p, '--put', test_key5, '--value', test_value5, '-c', '--keyEncoding=utf8', '--valueEncoding=binary' ] //.concat(defaultargs);
 
      var test_cp5 = spawn(lev, args);
      var test_output5 = '';
@@ -222,7 +215,7 @@ module.exports = {
        });
      });
    },
-
+/*
   'get from specific location': 
    function(test, next) {
 
@@ -246,8 +239,8 @@ module.exports = {
        test.equals(test_output1,  '"' + test_value1  + '"\r\n');
      });
    },
-
-   'get from specific location (verbose argument)': 
+*/
+   'get from specific location (Verbose)': 
    function(test, next) {
 
      test.plan(1);
@@ -272,7 +265,7 @@ module.exports = {
      });
    },
 
-   'get binary data':
+   'get binary data (Verbose)':
    function(test, next) {
     
      test.plan(1);
@@ -297,7 +290,7 @@ module.exports = {
      });
    },
 
-   'delete a key': 
+   'delete a key (Verbose)': 
    function(test, next) {
 
      test.plan(2);

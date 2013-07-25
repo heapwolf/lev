@@ -20,7 +20,6 @@ async.forEach(
 
       var basename = path.basename(name, '.js')
       var rawfile = path.join(pathname, basename)
-      console.log(rawfile)
 	 var tests = require(rawfile)
 
       async.forEach(
@@ -28,8 +27,6 @@ async.forEach(
         function(testname, nexttest) {
           if (!caseFilter || test.indexOf(caseFilter) > -1) {
             tap(testname, function(test) {
-              console.log(nextfile);
-		  console.log(testname);	
 		  tests[testname].call(null, test, nexttest)
             });
           }

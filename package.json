@@ -13,7 +13,8 @@
     "multilevel": "~4.1.0",
     "reconnect": "~1.5.0",
     "level-sublevel": "~4.7.0",
-    "tabulate": "0.0.1"
+    "tabulate": "0.0.1",
+    "config-chain": "~1.1.7"
   },
   "devDependencies": {
     "tap": "0.4.3",

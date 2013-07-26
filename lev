@@ -19,7 +19,7 @@ var utils = require('./lib/utils')
 var db
 
 try {
-  var settingsFile = path.join(process.env['HOME'], '.lev')
+  var settingsFile = utils.find('.lev');
   var defaults = JSON.parse(fs.readFileSync(settingsFile)) || {}
   argv = deepmerge(argv, defaults)
 }

@@ -15,6 +15,7 @@ results
 *.swo
 
 test/fixtures/db/*
+test/fixtures/db-server/*
 node_modules/*
 
 npm-debug.log

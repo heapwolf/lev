@@ -96,7 +96,6 @@ module.exports = {
        });
      });
    },
-/*
    'put from within the current working dir': 
    function(test, next) {
 
@@ -134,13 +133,11 @@ module.exports = {
        });
      });
  },
-*/
    'put from within the current working dir (Verbose)': 
    function(test, next) {
 
      test.plan(2);
 
-    // var args = [p, '-p', test_key4, test_value4].concat(defaultargs);
      var args = [p, '--put', test_key4, '--value', test_value4, '-c'].concat(defaultargs);
 	
      var test_cp4 = spawn(lev, args, { cwd: p });
@@ -153,7 +150,6 @@ module.exports = {
      test_cp4.stdout.on('data', function (data) {
        test_output4 += data;
      });
-	  //    process.exit()
 
      test_cp4.on('exit', function (data) {
 
@@ -215,14 +211,13 @@ module.exports = {
        });
      });
    },
-/*
+
   'get from specific location': 
    function(test, next) {
 
      test.plan(1);
 
-    // var args = [p, '-g', test_key1].concat(defaultargs);
-     var args = [p, '--get', test_key1].concat(defaultargs);
+     var args = [p, '-g', test_key1].concat(defaultargs);
      var test_cp1 = spawn(lev, args);
      var test_output1 = '';
 
@@ -239,7 +234,7 @@ module.exports = {
        test.equals(test_output1,  '"' + test_value1  + '"\r\n');
      });
    },
-*/
+
    'get from specific location (Verbose)': 
    function(test, next) {
 
@@ -319,7 +314,7 @@ module.exports = {
          db.get(test_key3, function (err, value) {
           
            if (err) { 
-             test.ok(true); 
+             test.ok(true, "Key has been removed"); 
              db.close();
              next();
            }
@@ -330,15 +325,48 @@ module.exports = {
          });
        });
      });
+   },
+   'delete a key': 
+   function(test, next) {
+
+     test.plan(2);
+
+     var args = [p, '-d', test_key4].concat(defaultargs);
+
+     var test_cp3 = spawn(lev, args, { cwd: p });
+     var test_output4 = '';
+
+     test_cp3.stderr.on('data', function (data) {
+       test.fail(String(data));
+     });
+
+     test_cp3.stdout.on('data', function (data) {
+       test_output4 += data;
+     });
+
+     test_cp3.on('exit', function (data) {
+
+       test.equals(test_output4, OK);
+
+       levelup(p, options, function (err, db) {
+        
+         if (err) { return test.fail(err); }
+
+         db.get(test_key4, function (err, value) {
+          
+           if (err) { 
+             test.ok(true, "Key has been removed"); 
+             db.close();
+             next();
+           }
+           else {
+             //test.equals(test_value4, value);
+           }
+
+         });
+       });
+     });
    }
 
-/*,
-   'status':
-   function(test, next){
-        test.plan(1)
-        test.ok(false, "only verbose options supported!")
-	next()
-   }	
-*/
 
 };

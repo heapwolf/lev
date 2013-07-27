@@ -5,7 +5,35 @@ var path = require('path')
 var net = require('net')
 var readline = require('readline')
 
-var argv = require('optimist').argv
+var argv = require('optimist')
+    .usage('\nUsage: lev /path/to/db (Relative paths allowed e.g. ./db)')
+    .check(function(){ if(process.argv.length == 2) return false }) 
+    .describe("c", 'Creates a database')
+    .alias('d', 'del')
+    .describe('del', 'Remove an entity')
+    .alias('g', 'get')
+    .describe('get', 'Get an record based on the key')
+    
+    .describe('put --value, -p ', 'Put a value into the database\n                      e.g $ lev /path/to/db --put key --value val\n                      Or $ lev /path/to/db -p key val')  
+    .describe('port', 'For connecting to a remote multilevel instance')
+   
+   .argv
+
+/*TODO 
+    .describe('cd', 'Change into sub-levels')
+    .alias('k', 'keys')
+    .describe('keys', 'Only return keys')	
+    .alias('l', 'limit')
+    .describe('limit', 'The number of entities to return')
+ .alias('r', 'read')
+    .describe('read', 'Read from the database')
+    .alias('s', 'start')
+    .describe('start', 'The starting key for a read')
+    .alias('e', 'end')
+    .describe('end', 'The end key')
+    .alias('m', 'multilevel')
+    .describe('multilevel', 'Sets up the local db as a multilevel server for better querying.\n                      Must be used with --port')
+*/
 var deepmerge = require('deepmerge')
 var reconnect = require('reconnect')
 
@@ -18,8 +46,10 @@ var utils = require('./lib/utils')
 
 var db
 
+
+
 try {
-  var settingsFile = utils.find('.lev.json');
+  var settingsFile = utils.find('.lev');
   var defaults = JSON.parse(fs.readFileSync(settingsFile)) || {}
   argv = deepmerge(argv, defaults)
 }
@@ -35,29 +65,46 @@ if (argv.encoding) {
   argv.valueEncoding = argv.encoding
 }
 
+var postConnect = function(){
+
+   db = Sublevel(db)
+
+   var allCommands = ['get', 'delr' ]
+ 
+   if (argv.p){
+     argv["put"] = argv["p"]
+     delete argv ["p"]
+     argv["value"] = argv._[1]   
+   }
+
+   var args = utils.filter(Object.keys(argv), allCommands.concat(Object.keys(db)))
+   
+   db.on('EncodingError', function(a, b, c) {
+    console.log(a, b, c)
+   })
+
+   db.on('error', function(a, b, c) {
+     console.log(a, b, c)
+   })
+
+   args.length > 0 
+     ? require('./lib/cli')(argv, db) 
+     : require('./lib/repl')(argv, db)
+}
+
 if (argv.port) {
-  reconnect(function (connection) {
+  reconnect(function (stream) {
     db = multilevel.client()
-    db.pipe(connection).pipe(db)
+    var dbstm = db.createRpcStream()
+    dbstm.pipe(stream).pipe(dbstm)
+    //stream.on("data", function(data){ console.log(data)})
+    postConnect();
   }).listen(argv.port)
+  
+}else {  
+
+   db = level(utils.location(), argv)
+   postConnect();
 }
-else {
-  db = level(utils.location(), argv)
-}
 
-db = Sublevel(db)
 
-var allCommands = ['get', 'delr']
-
-var args = utils.filter(Object.keys(argv), allCommands.concat(Object.keys(db)))
-db.on('EncodingError', function(a, b, c) {
-  console.log(a, b, c)
-})
-
-db.on('error', function(a, b, c) {
-  console.log(a, b, c)
-})
-
-args.length > 0 
-  ? require('./lib/cli')(argv, db) 
-  : require('./lib/repl')(argv, db)

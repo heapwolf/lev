@@ -15,7 +15,7 @@ var argv = require('optimist')
     .describe('get', 'Get an record based on the key')
     
     .describe('put --value, -p ', 'Put a value into the database\n                      e.g $ lev /path/to/db --put key --value val\n                      Or $ lev /path/to/db -p key val')  
-    .describe('port', 'For connecting to a remote multilevel instance')
+    .describe('port', 'For connecting to a remote multilevel instance. Used as a single option enters the command line interface')
    
    .argv
 
@@ -46,7 +46,7 @@ var utils = require('./lib/utils')
 
 var db
 
-
+   
 
 try {
   var settingsFile = utils.find('.lev');
@@ -60,26 +60,48 @@ catch(ex) {
   }
 }
 
+//TODO: Double assignment looks odd
 if (argv.encoding) {
   argv.keyEncoding = argv.encoding
   argv.valueEncoding = argv.encoding
 }
 
+if (argv.p){
+     
+     if(argv.port){
+	     argv["put"] = argv["p"]
+	     delete argv ["p"]
+	     argv["value"] = argv._[0] 
+	     argv._[0] = ''     
+     }else{
+     	argv["put"] = argv["p"]
+        delete argv ["p"]
+        argv["value"] = argv._[1] 
+        argv._[1] = ''
+     }	
+}
+/*
+if(argv.d){
+    delete argv ["d"]
+
+    for(var arg in argv){
+        console.log(arg + " : " +argv[arg])
+     }
+}
+if(argv.del){
+   for(var arg in argv){
+        console.log(arg + " : " +argv[arg])
+     }
+}
+*/
 var postConnect = function(){
 
    db = Sublevel(db)
 
-   var allCommands = ['get', 'delr' ]
- 
-   if (argv.p){
-     argv["put"] = argv["p"]
-     delete argv ["p"]
-     argv["value"] = argv._[1]   
-   }
-
+   var allCommands = ['get', 'delr'] 
    var args = utils.filter(Object.keys(argv), allCommands.concat(Object.keys(db)))
-   
-   db.on('EncodingError', function(a, b, c) {
+ 
+      db.on('EncodingError', function(a, b, c) {
     console.log(a, b, c)
    })
 
@@ -93,16 +115,29 @@ var postConnect = function(){
 }
 
 if (argv.port) {
+
   reconnect(function (stream) {
     db = multilevel.client()
     var dbstm = db.createRpcStream()
     dbstm.pipe(stream).pipe(dbstm)
-    //stream.on("data", function(data){ console.log(data)})
+
+var allCommands = ['get', 'delr' ]
+ var args = utils.filter(Object.keys(argv), allCommands.concat(Object.keys(db)))
+
+    stream.on("data", function(data){ 
+        
+        if(args.length > 0){
+	//We are CLI so close after response
+	        process.exit()
+	}
+    })
+
     postConnect();
   }).listen(argv.port)
   
 }else {  
-
+  
+   
    db = level(utils.location(), argv)
    postConnect();
 }

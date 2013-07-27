@@ -17,6 +17,6 @@ results
 test/fixtures/db/*
 test/fixtures/db-server/*
 node_modules/*
-
+tmp/*
 npm-debug.log
 .lev_history

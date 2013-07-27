@@ -26,7 +26,35 @@ const test_value5 = 'testvalue5';
 var defaultargs = ['--format', 'false', '--encoding', 'utf8'];
 
 module.exports = {
+  'Test Usage message on no args':
+  function(test,next){
+    
+    test.plan(2)
+    var test_cp1 = spawn(lev, []);
+    var test_output1 = '';
 
+    test_cp1.stderr.on('data', function (data) {
+        var isOk = false;
+
+        if(data.toString().indexOf("Usage") == 1){
+           isOk = true;   
+        }
+     
+       if(data.toString().indexOf("Argument") == 0){
+          isOk = true;
+       }		
+       test.ok(isOk, "Message has expected start")
+           
+    });
+
+    test_cp1.stdout.on('data', function (data) {
+      test_output1 += data;
+    });
+
+    test_cp1.on('exit', function (data) {
+      
+    })
+  },
   'put to specific location (Verbose)':
   function(test, next) {
     test.plan(2);
@@ -66,7 +94,6 @@ module.exports = {
    function(test, next) {
 
      test.plan(2);
-  ///  var args = [p, '-p', test_key1, test_value1].concat(defaultargs);
      var args = [p, '--put', test_key2, '--value', test_value2 ].concat(defaultargs);
     
      var test_cp1 = spawn(lev, args);
@@ -83,7 +110,7 @@ module.exports = {
      test_cp1.on('exit', function (data) {
 	
      //	test.ok(false, "path params fail", "#TODO params need debugging");
-       test.equals(test_output1, OK);
+       test.equals(test_output1, OK, "Output validated");
        levelup(p, options, function (err, db) {
       
          if (err) { return test.fail(err); }
@@ -91,7 +118,7 @@ module.exports = {
          db.get(test_key2, function (err, value) {
           
            if (err) { return test.fail(err); }
-           test.equals(test_value2, value);
+           test.equals(test_value2, value, "Insert Validated" );
            db.close();
            next();
          });
@@ -103,7 +130,6 @@ module.exports = {
 
      test.plan(2);
 
-    // var args = [p, '--put', test_key3, test_value3].concat(defaultargs);
      var args = [p, '-p', test_key3, test_value3].concat(defaultargs);
 	
      var test_cp3 = spawn(lev, args, { cwd: p });
@@ -176,14 +202,8 @@ module.exports = {
    function(test, next) {
 
      test.plan(2);
-/*
-     var args = [
-       p, '-p', test_key5, test_value5, '--keyEncoding=utf8',
-       '--valueEncoding=binary'
-     ];*/
 
-     var args = [p, '--put', test_key5, '--value', test_value5, '-c', '--keyEncoding=utf8', '--valueEncoding=binary' ] //.concat(defaultargs);
-
+     var args = [p, '--put', test_key5, '--value', test_value5, '-c', '--keyEncoding=utf8', '--valueEncoding=binary' ]
      var test_cp5 = spawn(lev, args);
      var test_output5 = '';
 
@@ -372,25 +392,80 @@ module.exports = {
    'Start Multilevel Server' :
    function(test, next) {
     test.plan(1);
+       
 	var svr = levelup(process.cwd() + '/test/fixtures/db-server')
         tcpserver = net.createServer(function (con) {
            con.pipe(multilevel.server(svr)).pipe(con)
-        }).listen(3000)
-    //
+       
+     }).listen(3000)
+    	   test.ok(svr, "server started" )
+           next();
     // for the first test, create the database in case it does not exist.
     //
-    var args = [];
-    test.ok(svr, "server started" )
-    
+        
    },
     'multilevel put to specific location (Verbose)': 
    function(test, next) {
-     test.plan(0)
-     next();
-/*     test.plan(1);
-  ///  var args = [p, '-p', test_key1, test_value1].concat(defaultargs);
-     var args = ['--port 3000 --put', test_key2, '--value', test_value2 ].concat(defaultargs);
-    
+
+     test.plan(2);
+     var args = ['--port', '3000', '--put', test_key2, '--value', test_value2 ]
+     var test_cp1 = spawn(lev, args);
+     var test_output1 = '';
+
+     test_cp1.stderr.on('data', function (data) {
+       test.fail(String(data));
+     });
+
+     test_cp1.stdout.on('data', function (data) {
+       test_output1 += data;
+     });
+
+     test_cp1.on('exit', function (data) {
+	
+     //	TODO: test.ok(false, "path params fail", "#TODO params need debugging");
+       test.equals(test_output1, OK, "Response Returned OK");
+       var mcl = multilevel.client(); 
+       var con = net.connect(3000);
+       con.pipe(mcl.createRpcStream()).pipe(con)
+   
+         mcl.get(test_key2, function (err, value) {
+          
+           if (err) { return test.fail(err); }
+           test.equals(test_value2, value, "Multilevel put value is present");
+           mcl.close();
+           next();
+         });
+     })
+}, 
+  'multilevel get from specific location': 
+   function(test, next) {
+
+     test.plan(1);
+
+     var args = ['--port', '3000', '-g', test_key2].concat(defaultargs);
+     var test_cp1 = spawn(lev, args);
+     var test_output1 = '';
+
+     test_cp1.stderr.on('data', function (data) {
+       test.fail(String(data));
+     });
+
+     test_cp1.stdout.on('data', function (data) {
+       test_output1 += data;
+     });
+
+     test_cp1.on('exit', function (data) {
+
+       test.equals(test_output1,  '"' + test_value2  + '"\r\n');
+     });
+   },
+
+
+'multilevel put to specific location': 
+   function(test, next) {
+
+     test.plan(2);
+     var args = ['--port', '3000', '-p', test_key3, test_value3];
      var test_cp1 = spawn(lev, args);
      var test_output1 = '';
 
@@ -405,18 +480,62 @@ module.exports = {
      test_cp1.on('exit', function (data) {
 	
      //	test.ok(false, "path params fail", "#TODO params need debugging");
-       test.equals(test_output1, OK);
+       test.equals(test_output1, OK, "Response Returned OK");
        var mcl = multilevel.client(); 
        var con = net.connect(3000);
        con.pipe(mcl.createRpcStream()).pipe(con)
-   
-         mcl.get(test_key2, function (err, value) {
+       
+         mcl.get(test_key3, function (err, value) {
           
            if (err) { return test.fail(err); }
-           test.equals(test_value2, value);
+           test.equals(test_value3, value, "Multilevel put value is present");
            mcl.close();
            next();
          });
-     })*/
-}, "TearDown" : function(test, next) { test.plan(0); tcpserver.close(); next(); }
+      
+     })
+}, 
+   'multi level delete a key': 
+   function(test, next) {
+
+     test.plan(1);
+
+     var args = ['--port', '3000', '-d', test_key2].concat(defaultargs);
+
+     var test_cp = spawn(lev, args);
+     var test_output4 = '';
+
+     test_cp.stderr.on('data', function (data) {
+       test.fail(String(data));
+     });
+
+     test_cp.stdout.on('data', function (data) {
+       test_output4 += data;
+       
+     });
+
+     test_cp.on('exit', function (data) {
+     test.equals(test_output4, OK);
+        
+      //Should test value but there seems to be an error with 
+       /*var mcl = multilevel.client(); 
+       var con = net.connect(3000);
+       con.pipe(mcl.createRpcStream()).pipe(con)
+        con.on('connect', function(){
+       
+         mcl.get(test_key3, function (err, value) {
+           if (err) { 
+		 test.ok(true, "Key has been removed"); 
+             	 mcl.close();
+                 next();	
+           } 
+           
+         });
+	});
+	*/
+       
+     });
+   },
+
+"TearDown" : function(test, next) { test.plan(0); tcpserver.close(); next(); }
 };

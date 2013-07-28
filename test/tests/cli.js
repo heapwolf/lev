@@ -537,5 +537,53 @@ module.exports = {
      });
    },
 
-"TearDown" : function(test, next) { test.plan(0); tcpserver.close(); next(); }
+"TearDown Server" : function(test, next) { test.plan(0); tcpserver.close(); next(); },
+
+"Create Stream Start End" : function( test, next ) { 
+   
+     test.plan(1);
+
+     var args = [p, '--keys', '-s', 'testkey1', '-e','testkey10'].concat(defaultargs);
+     var test_cp1 = spawn(lev, args);
+     var test_output1 = '';
+
+     test_cp1.stderr.on('data', function (data) {
+       test.fail(String(data));
+     });
+
+     test_cp1.stdout.on('data', function (data) {
+       test_output1 += data;
+     });
+
+     test_cp1.on('exit', function (data) {
+
+       test.equals(test_output1,  '"' + test_key1  + '"\r\n');
+     });
+
+},
+
+"Create Stream Limit" : function( test, next ) { 
+   
+     test.plan(1);
+
+     var args = [p, '--keys', '-l', '1'].concat(defaultargs);
+     var test_cp1 = spawn(lev, args);
+     var test_output1 = '';
+
+     test_cp1.stderr.on('data', function (data) {
+       test.fail(String(data));
+     });
+
+     test_cp1.stdout.on('data', function (data) {
+       test_output1 += data;
+     });
+
+     test_cp1.on('exit', function (data) {
+
+       test.equals(test_output1,  '"' + test_key1  + '"\r\n');
+     });
+
+}
+
+
 };

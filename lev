@@ -6,7 +6,7 @@ var net = require('net')
 var readline = require('readline')
 
 var argv = require('optimist')
-    .usage('\nUsage: lev /path/to/db (Relative paths allowed e.g. ./db)')
+    .usage('\nUsage: lev /path/to/db (Relative paths allowed e.g. ./db)\nIf no options are supplied then a REPL is provided')
     .check(function(){ if(process.argv.length == 2) return false }) 
     .describe("c", 'Creates a database')
     .alias('d', 'del')
@@ -15,24 +15,22 @@ var argv = require('optimist')
     .describe('get', 'Get an record based on the key')
     
     .describe('put --value, -p ', 'Put a value into the database\n                      e.g $ lev /path/to/db --put key --value val\n                      Or $ lev /path/to/db -p key val')  
-    .describe('port', 'For connecting to a remote multilevel instance. Used as a single option enters the command line interface')
-   
-   .argv
-
-/*TODO 
-    .describe('cd', 'Change into sub-levels')
-    .alias('k', 'keys')
+    .describe('port', 'For connecting to a remote multilevel instance.\n                      Use as a single option for a REPL')
+     .alias('k', 'keys')
     .describe('keys', 'Only return keys')	
     .alias('l', 'limit')
     .describe('limit', 'The number of entities to return')
- .alias('r', 'read')
-    .describe('read', 'Read from the database')
     .alias('s', 'start')
     .describe('start', 'The starting key for a read')
     .alias('e', 'end')
     .describe('end', 'The end key')
-    .alias('m', 'multilevel')
-    .describe('multilevel', 'Sets up the local db as a multilevel server for better querying.\n                      Must be used with --port')
+   .argv
+
+/*TODO 
+    .describe('cd', 'Change into sub-levels')
+.alias('r', 'read')
+    .describe('read', 'Read from the database')
+    
 */
 var deepmerge = require('deepmerge')
 var reconnect = require('reconnect')
@@ -66,6 +64,7 @@ if (argv.encoding) {
   argv.valueEncoding = argv.encoding
 }
 
+
 if (argv.p){
      
      if(argv.port){
@@ -80,25 +79,12 @@ if (argv.p){
         argv._[1] = ''
      }	
 }
-/*
-if(argv.d){
-    delete argv ["d"]
 
-    for(var arg in argv){
-        console.log(arg + " : " +argv[arg])
-     }
-}
-if(argv.del){
-   for(var arg in argv){
-        console.log(arg + " : " +argv[arg])
-     }
-}
-*/
 var postConnect = function(){
 
    db = Sublevel(db)
-
-   var allCommands = ['get', 'delr'] 
+   
+   var allCommands = ['get', 'delr', 'limit', 'keys', 'start', 'end' ] 
    var args = utils.filter(Object.keys(argv), allCommands.concat(Object.keys(db)))
  
       db.on('EncodingError', function(a, b, c) {
@@ -108,7 +94,21 @@ var postConnect = function(){
    db.on('error', function(a, b, c) {
      console.log(a, b, c)
    })
-
+   for(var arg in argv){
+         switch(arg){
+                case 'limit':
+                case 'start':
+                case 'end':
+                   argv.createReadStream = true
+                   break;
+                case 'keys':
+                   argv.values = false;
+                   argv.createReadStream = true
+                   break;
+        }
+        
+    }
+ 
    args.length > 0 
      ? require('./lib/cli')(argv, db) 
      : require('./lib/repl')(argv, db)
@@ -120,18 +120,27 @@ if (argv.port) {
     db = multilevel.client()
     var dbstm = db.createRpcStream()
     dbstm.pipe(stream).pipe(dbstm)
+    // If it is a put get or delete then close the process as soon as the data has returned.
+    var isPRD = false; 
+    
+    //If it is a query then we need to flag createReadStream
 
-var allCommands = ['get', 'delr' ]
- var args = utils.filter(Object.keys(argv), allCommands.concat(Object.keys(db)))
-
+    for(var arg in argv){
+        //console.log(arg)
+         switch(arg){
+      		case 'put':
+		case 'get':
+		case 'del':
+		   isPRD = true
+ 		   break
+        }
+    }
     stream.on("data", function(data){ 
-        
-        if(args.length > 0){
+        if(isPRD){
 	//We are CLI so close after response
 	        process.exit()
 	}
     })
-
     postConnect();
   }).listen(argv.port)
   
@@ -140,6 +149,7 @@ var allCommands = ['get', 'delr' ]
    
    db = level(utils.location(), argv)
    postConnect();
+  
 }
 
 

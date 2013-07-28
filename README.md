@@ -14,23 +14,54 @@ $npm install lev -g
 ```
 
 # CLI EXAMPLES
-Get the first 10 keys in the database, the path is optional.
-```js
-lev path/to/db --keys --limit 10
+
+```bash
+$ lev
+``` 
+Will print out usage options. Note most commands have shorthand aliases 
+ 
+
+Get the first 10 keys in the database, the path is optional but if ommited a database will be created in the current working directory.
+
+```bash
+$ lev path/to/db --keys --limit 10
+```
+
+or short hand 
+
+```bash
+$ lev path/to/db -kl 10
 ```
 
 Get the first ten records starting at `bazz` and ending at `zomg`.
-```js
-lev path/to/db --read --limit 10 --start 'bazz' --end 'zomg'
+```bash
+$ lev path/to/db --limit 10 --start 'bazz' --end 'zomg'
 ```
 
 Get the key `welcome` from inside the 2 sublevels deep
-```js
+```bash
 lev ./db --cd greetings/en --get 'welcome'
 ```
 
 # CLI OPTIONS
-Options match the API. ie `lev /path/to/db --keys --start 'b' --end 'e' --limit 2`
+
+```
+If no options are supplied then a REPL is provided to either the path or port specified
+
+Options:
+  -c                  Creates a database                                                                                                                                   
+  --del, -d           Remove an entity                                                                                                                                     
+  --get, -g           Get an record based on the key                                                                                                                       
+  --put --value, -p   Put a value into the database
+                      e.g $ lev /path/to/db --put key --value val
+                      Or $ lev /path/to/db -p key val
+  --port              For connecting to a remote multilevel instance.
+                      Use as a single option for a REPL                                              
+  --keys, -k          Only return keys                                                                                                                                     
+  --limit, -l         The number of entities to return                                                                                                                     
+  --start, -s         The starting key for a read                                                                                                                          
+  --end, -e           The end key 
+```
 
 For connecting to a [multilevel][1] enabled instance, specify the `port` parameter:
 

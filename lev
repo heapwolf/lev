@@ -5,46 +5,54 @@ var path = require('path')
 var net = require('net')
 var readline = require('readline')
 
-var argv = require('optimist')
-    .usage('\nUsage: lev /path/to/db (Relative paths allowed e.g. ./db)\nIf no options are supplied then a REPL is provided')
-    .check(function(){ if(process.argv.length == 2) return false }) 
-    .describe("c", 'Creates a database')
-    .alias('d', 'del')
-    .describe('del', 'Remove an entity')
-    .alias('g', 'get')
-    .describe('get', 'Get an record based on the key')
-    
-    .describe('put --value, -p ', 'Put a value into the database\n                      e.g $ lev /path/to/db --put key --value val\n                      Or $ lev /path/to/db -p key val')  
-    .describe('port', 'For connecting to a remote multilevel instance.\n                      Use as a single option for a REPL')
-     .alias('k', 'keys')
-    .describe('keys', 'Only return keys')	
-    .alias('l', 'limit')
-    .describe('limit', 'The number of entities to return')
-    .alias('s', 'start')
-    .describe('start', 'The starting key for a read')
-    .alias('e', 'end')
-    .describe('end', 'The end key')
-   .argv
-
-/*TODO 
-    .describe('cd', 'Change into sub-levels')
-.alias('r', 'read')
-    .describe('read', 'Read from the database')
-    
-*/
+var Tree = require('level-subtree')
 var deepmerge = require('deepmerge')
 var reconnect = require('reconnect')
-
 var Sublevel = require('level-sublevel')
 var multilevel = require('multilevel')
-var deleteRange = require("level-delete-range")
+var deleteRange = require('level-delete-range')
 var level = require('level')
 
 var utils = require('./lib/utils')
 
-var db
+var argv = require('optimist')
+  .usage('lev [path] [options]')
+  .check(function(){ if (process.argv.length == 2) return false }) 
 
-   
+  .describe('c', 'Creates a database')
+
+  .alias('d', 'del')
+  .describe('del', 'Remove an entity')
+
+  .alias('g', 'get')
+  .describe('get', 'Get an record based on the key')
+
+  .describe('put --value', 'Insert a new value')  
+
+  .describe('port', 'Connect to a remote instance')
+
+  .alias('k', 'keys')
+  .describe('keys', 'Return only keys')
+
+  .alias('l', 'limit')
+  .describe('limit', 'The number of entities to return')
+
+  .alias('s', 'start')
+  .describe('start', 'The starting key for a read')
+
+  .alias('e', 'end')
+  .describe('end', 'The end key')
+  .argv
+
+/*
+ * TODO 
+
+  .describe('cd', 'Change into sub-levels')
+  .alias('r', 'read')
+  .describe('read', 'Read from the database')
+*/
+
+var db
 
 try {
   var settingsFile = utils.find('.lev');
@@ -58,98 +66,63 @@ catch(ex) {
   }
 }
 
-//TODO: Double assignment looks odd
 if (argv.encoding) {
-  argv.keyEncoding = argv.encoding
-  argv.valueEncoding = argv.encoding
+  argv.keyEncoding = argv.valueEncoding = argv.encoding
 }
 
+var postConnect = function() {
 
-if (argv.p){
-     
-     if(argv.port){
-	     argv["put"] = argv["p"]
-	     delete argv ["p"]
-	     argv["value"] = argv._[0] 
-	     argv._[0] = ''     
-     }else{
-     	argv["put"] = argv["p"]
-        delete argv ["p"]
-        argv["value"] = argv._[1] 
-        argv._[1] = ''
-     }	
-}
+  db.tree = Tree(db)
+  db = Sublevel(db, argv.sep)
 
-var postConnect = function(){
+  var allCommands = ['get', 'delr', 'limit', 'keys', 'start', 'end'] 
+  var args = utils.filter(Object.keys(argv), allCommands.concat(Object.keys(db)))
 
-   db = Sublevel(db)
-   
-   var allCommands = ['get', 'delr', 'limit', 'keys', 'start', 'end' ] 
-   var args = utils.filter(Object.keys(argv), allCommands.concat(Object.keys(db)))
- 
-      db.on('EncodingError', function(a, b, c) {
-    console.log(a, b, c)
-   })
+  if ('keys' in argv) {
+    argv.values = false
+    argv.createReadStream = true
+  }
 
-   db.on('error', function(a, b, c) {
-     console.log(a, b, c)
-   })
-   for(var arg in argv){
-         switch(arg){
-                case 'limit':
-                case 'start':
-                case 'end':
-                   argv.createReadStream = true
-                   break;
-                case 'keys':
-                   argv.values = false;
-                   argv.createReadStream = true
-                   break;
-        }
-        
-    }
- 
-   args.length > 0 
-     ? require('./lib/cli')(argv, db) 
-     : require('./lib/repl')(argv, db)
+  ['limit', 'start', 'end'].forEach(function(arg) {
+    if (argv[arg]) { argv.createReadStream = true }
+  })
+
+  args.length > 0 
+    ? require('./lib/cli')(argv, db) 
+    : require('./lib/repl')(argv, db)
 }
 
 if (argv.port) {
 
   reconnect(function (stream) {
+
     db = multilevel.client()
     var dbstm = db.createRpcStream()
     dbstm.pipe(stream).pipe(dbstm)
-    // If it is a put get or delete then close the process as soon as the data has returned.
-    var isPRD = false; 
-    
-    //If it is a query then we need to flag createReadStream
 
-    for(var arg in argv){
-        //console.log(arg)
-         switch(arg){
-      		case 'put':
-		case 'get':
-		case 'del':
-		   isPRD = true
- 		   break
-        }
-    }
-    stream.on("data", function(data){ 
-        if(isPRD){
-	//We are CLI so close after response
-	        process.exit()
-	}
+    // If it is a put get or delete then close the process as soon as the data has returned.
+    var isPRD = false 
+
+    //If it is a query then we need to flag createReadStream
+    ['put', 'get', 'del'].forEach(function(arg) {
+      if (argv[arg]) { isPRD = true }
     })
-    postConnect();
+
+    stream.on('data', function(data) { 
+      if (isPRD) {
+        // We are CLI so close after response
+        process.exit()
+      }
+    })
+
+    postConnect()
   }).listen(argv.port)
   
-}else {  
-  
-   
+}
+else {
+
    db = level(utils.location(), argv)
    postConnect();
-  
 }
 
 

@@ -19,6 +19,9 @@ var argv = require('optimist')
   .usage('lev [path] [options]')
   .check(function(){ if (process.argv.length == 2) return false }) 
 
+  .alias('t', 'tree')
+  .describe('tree', 'List sublevels as a tree')
+
   .describe('c', 'Creates a database')
 
   .alias('d', 'del')
@@ -53,6 +56,7 @@ var argv = require('optimist')
 */
 
 var db
+var tree
 
 try {
   var settingsFile = utils.find('.lev');
@@ -72,10 +76,10 @@ if (argv.encoding) {
 
 var postConnect = function() {
 
-  db.tree = Tree(db)
+  tree = Tree(db)
   db = Sublevel(db, argv.sep)
 
-  var allCommands = ['get', 'delr', 'limit', 'keys', 'start', 'end'] 
+  var allCommands = ['get', 'delr', 'limit', 'keys', 'start', 'end', 'tree'] 
   var args = utils.filter(Object.keys(argv), allCommands.concat(Object.keys(db)))
 
   if ('keys' in argv) {
@@ -83,13 +87,13 @@ var postConnect = function() {
     argv.createReadStream = true
   }
 
-  ['limit', 'start', 'end'].forEach(function(arg) {
+  ;['limit', 'start', 'end'].forEach(function(arg) {
     if (argv[arg]) { argv.createReadStream = true }
   })
 
   args.length > 0 
-    ? require('./lib/cli')(argv, db) 
-    : require('./lib/repl')(argv, db)
+    ? require('./lib/cli')(argv, db, tree)
+    : require('./lib/repl')(argv, db, tree)
 }
 
 if (argv.port) {

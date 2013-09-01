@@ -104,7 +104,7 @@ if (argv.port) {
     var isPRD = false 
 
     //If it is a query then we need to flag createReadStream
-    ['put', 'get', 'del'].forEach(function(arg) {
+    ;['put', 'get', 'del'].forEach(function(arg) {
       if (argv[arg]) { isPRD = true }
     })
 

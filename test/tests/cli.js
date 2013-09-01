@@ -34,17 +34,17 @@ module.exports = {
     var test_output1 = '';
 
     test_cp1.stderr.on('data', function (data) {
-        var isOk = false;
+      var isOk = false;
 
-        if(data.toString().indexOf("Usage") == 1){
-           isOk = true;   
-        }
+      if (data.toString().indexOf("lev") == 0) {
+        isOk = true;   
+      }
      
-       if(data.toString().indexOf("Argument") == 0){
-          isOk = true;
-       }		
-       test.ok(isOk, "Message has expected start")
-           
+      if (data.toString().indexOf("Argument") == 0) {
+        isOk = true;
+      }
+      test.ok(isOk, "Message has expected start")
+
     });
 
     test_cp1.stdout.on('data', function (data) {
@@ -55,19 +55,24 @@ module.exports = {
       
     })
   },
-  'put to specific location (Verbose)':
+  'put to specific location':
   function(test, next) {
     test.plan(2);
 
     //
     // for the first test, create the database in case it does not exist.
     //
-    var args = [p, '--put', test_key1, '--value', test_value1, '-c'].concat(defaultargs);
+    var args = [p, 
+      '--put', test_key1, 
+      '--value', test_value1, 
+      '-c'
+    ].concat(defaultargs);
+
     var test_cp1 = spawn(lev, args);
     var test_output1 = '';
 
     test_cp1.stderr.on('data', function (data) {
-      test.fail(data);
+      test.notOk(true, data);
     });
 
     test_cp1.stdout.on('data', function (data) {
@@ -77,11 +82,11 @@ module.exports = {
     test_cp1.on('exit', function (data) {
       levelup(path.join(__dirname, '..', 'fixtures', 'db'), options, function (err, db) {
         
-      test.equals( test_output1, OK);
-        if (err) { return test.fail(err); }
+      test.equals(test_output1, OK);
+        if (err) { return test.notOk(true, err); }
 
         db.get(test_key1, function (err, value) {
-          if (err) { return test.fail(err); }
+          if (err) { return test.notOk(true, err); }
           test.equals(test_value1, value, "Value stored and retrieved as expected");
           db.close();
           next();
@@ -94,13 +99,18 @@ module.exports = {
    function(test, next) {
 
      test.plan(2);
-     var args = [p, '--put', test_key2, '--value', test_value2 ].concat(defaultargs);
-    
+     var args = [
+       p, 
+       '--put', 
+       '--key', test_key2, 
+       '--value', test_value2 
+     ].concat(defaultargs);
+
      var test_cp1 = spawn(lev, args);
      var test_output1 = '';
 
      test_cp1.stderr.on('data', function (data) {
-       test.fail(String(data));
+       test.notOk(true, String(data));
      });
 
      test_cp1.stdout.on('data', function (data) {
@@ -108,16 +118,16 @@ module.exports = {
      });
 
      test_cp1.on('exit', function (data) {
-	
-     //	test.ok(false, "path params fail", "#TODO params need debugging");
+
+     //test.ok(false, "path params fail", "#TODO params need debugging");
        test.equals(test_output1, OK, "Output validated");
        levelup(p, options, function (err, db) {
       
-         if (err) { return test.fail(err); }
+         if (err) { return test.notOk(true, err); }
 
          db.get(test_key2, function (err, value) {
           
-           if (err) { return test.fail(err); }
+           if (err) { return test.notOk(true, err); }
            test.equals(test_value2, value, "Insert Validated" );
            db.close();
            next();
@@ -130,13 +140,18 @@ module.exports = {
 
      test.plan(2);
 
-     var args = [p, '-p', test_key3, test_value3].concat(defaultargs);
-	
+     var args = [
+       p, 
+       '--put', 
+       '--key', test_key3, 
+       '--value', test_value3
+     ].concat(defaultargs);
+
      var test_cp3 = spawn(lev, args, { cwd: p });
      var test_output3 = '';
 
      test_cp3.stderr.on('data', function (data) {
-       test.fail(String(data));
+       test.notOk(true, String(data));
      });
 
      test_cp3.stdout.on('data', function (data) {
@@ -149,11 +164,11 @@ module.exports = {
 
        levelup(p, options, function (err, db) {
         
-         if (err) { return test.fail(err); }
+         if (err) { return test.notOk(true, err); }
 
          db.get(test_key3, function (err, value) {
           
-           if (err) { return test.fail(err); }
+           if (err) { return test.notOk(true, err); }
            test.equals(test_value3, value);
            db.close();
            next();
@@ -166,13 +181,19 @@ module.exports = {
 
      test.plan(2);
 
-     var args = [p, '--put', test_key4, '--value', test_value4, '-c'].concat(defaultargs);
-	
+     var args = [
+       p, 
+       '--put', 
+       '--key', test_key4, 
+       '--value', test_value4, 
+       '-c'
+     ].concat(defaultargs);
+        
      var test_cp4 = spawn(lev, args, { cwd: p });
      var test_output4 = '';
 
      test_cp4.stderr.on('data', function (data) {
-       test.fail(String(data));
+       test.notOk(true, String(data));
      });
 
      test_cp4.stdout.on('data', function (data) {
@@ -185,11 +206,11 @@ module.exports = {
 
        levelup(p, options, function (err, db) {
         
-         if (err) { return test.fail(err); }
+         if (err) { return test.notOk(true, err); }
 
          db.get(test_key4, function (err, value) {
           
-           if (err) { return test.fail(err); }
+           if (err) { return test.notOk(true, err); }
            test.equals(test_value4, value);
            db.close();
            next();
@@ -198,17 +219,26 @@ module.exports = {
      });
    },
 
-   'put binary data (Verbose)':
+   'put binary data (Verbose)': 
    function(test, next) {
 
      test.plan(2);
 
-     var args = [p, '--put', test_key5, '--value', test_value5, '-c', '--keyEncoding=utf8', '--valueEncoding=binary' ]
+     var args = [
+       p, 
+       '--put', 
+       '--key', test_key5, 
+       '--value', test_value5, 
+       '-c', 
+       '--keyEncoding=utf8', 
+       '--valueEncoding=binary' 
+     ];
+
      var test_cp5 = spawn(lev, args);
      var test_output5 = '';
 
      test_cp5.stderr.on('data', function (data) {
-       test.fail(String(data));
+       test.notOk(true, String(data));
      });
 
      test_cp5.stdout.on('data', function (data) {
@@ -221,11 +251,11 @@ module.exports = {
 
        levelup(p, { valueEncoding : 'binary' }, function (err, db) {
 
-         if (err) { return test.fail(err); }
+         if (err) { return test.notOk(true, err); }
 
          db.get(test_key5, function (err, value) {
 
-           if (err) { return test.fail(err); }
+           if (err) { return test.notOk(true, err); }
            test.equals(value.toString(), test_value5);
            db.close();
            next();
@@ -244,7 +274,7 @@ module.exports = {
      var test_output1 = '';
 
      test_cp1.stderr.on('data', function (data) {
-       test.fail(String(data));
+       test.notOk(true, String(data));
      });
 
      test_cp1.stdout.on('data', function (data) {
@@ -268,7 +298,7 @@ module.exports = {
      var test_output2 = '';
 
      test_cp2.stderr.on('data', function (data) {
-       test.fail(data);
+       test.notOk(true, data);
      });
 
      test_cp2.stdout.on('data', function (data) {
@@ -277,7 +307,7 @@ module.exports = {
 
      test_cp2.on('exit', function (data) {
   
-	  //    process.exit()
+          //    process.exit()
        test.equals(test_output2,  '"' + test_value2 + '"\r\n' );
      });
    },
@@ -293,7 +323,7 @@ module.exports = {
      var test_output5 = '';
 
    test_cp5.stderr.on('data', function (data) {
-       test.fail(data);
+       test.notOk(true, String(data));
      });
 
      test_cp5.stdout.on('data', function (data) {
@@ -302,7 +332,7 @@ module.exports = {
 
      test_cp5.on('exit', function (data) {
        var arr = '[116,101,115,116,118,97,108,117,101,53]\r\n';
-	   
+           
        test.equals(test_output5,  arr);
      });
    },
@@ -318,7 +348,7 @@ module.exports = {
      var test_output3 = '';
 
      test_cp3.stderr.on('data', function (data) {
-       test.fail(String(data));
+       test.notOk(true, String(data));
      });
 
      test_cp3.stdout.on('data', function (data) {
@@ -331,7 +361,7 @@ module.exports = {
 
        levelup(p, options, function (err, db) {
         
-         if (err) { return test.fail(err); }
+         if (err) { return test.notOk(true, err); }
 
          db.get(test_key3, function (err, value) {
           
@@ -359,7 +389,7 @@ module.exports = {
      var test_output4 = '';
 
      test_cp3.stderr.on('data', function (data) {
-       test.fail(String(data));
+       test.notOk(true, String(data));
      });
 
      test_cp3.stdout.on('data', function (data) {
@@ -372,7 +402,7 @@ module.exports = {
 
        levelup(p, options, function (err, db) {
         
-         if (err) { return test.fail(err); }
+         if (err) { return test.notOk(true, err); }
 
          db.get(test_key4, function (err, value) {
           
@@ -391,20 +421,15 @@ module.exports = {
    },
    'Start Multilevel Server' :
    function(test, next) {
-    test.plan(1);
-       
-	var svr = levelup(process.cwd() + '/test/fixtures/db-server')
-        tcpserver = net.createServer(function (con) {
-           con.pipe(multilevel.server(svr)).pipe(con)
-       
+     test.plan(1);
+     var svr = levelup(process.cwd() + '/test/fixtures/db-server')
+     tcpserver = net.createServer(function (con) {
+       con.pipe(multilevel.server(svr)).pipe(con)
      }).listen(3000)
-    	   test.ok(svr, "server started" )
-           next();
-    // for the first test, create the database in case it does not exist.
-    //
-        
+     test.ok(svr, "server started")
+     next()
    },
-    'multilevel put to specific location (Verbose)': 
+   'put to multilevel': 
    function(test, next) {
 
      test.plan(2);
@@ -413,7 +438,7 @@ module.exports = {
      var test_output1 = '';
 
      test_cp1.stderr.on('data', function (data) {
-       test.fail(String(data));
+       test.notOk(true, String(data));
      });
 
      test_cp1.stdout.on('data', function (data) {
@@ -421,8 +446,8 @@ module.exports = {
      });
 
      test_cp1.on('exit', function (data) {
-	
-     //	TODO: test.ok(false, "path params fail", "#TODO params need debugging");
+
+     // TODO: test.ok(false, "path params fail", "#TODO params need debugging");
        test.equals(test_output1, OK, "Response Returned OK");
        var mcl = multilevel.client(); 
        var con = net.connect(3000);
@@ -430,24 +455,24 @@ module.exports = {
    
          mcl.get(test_key2, function (err, value) {
           
-           if (err) { return test.fail(err); }
+           if (err) { return test.notOk(true, err); }
            test.equals(test_value2, value, "Multilevel put value is present");
            mcl.close();
            next();
          });
      })
-}, 
-  'multilevel get from specific location': 
+  }, 
+  'get from multilevel': 
    function(test, next) {
 
      test.plan(1);
 
-     var args = ['--port', '3000', '-g', test_key2].concat(defaultargs);
+     var args = ['--port', '3000', '--get', test_key2].concat(defaultargs);
      var test_cp1 = spawn(lev, args);
      var test_output1 = '';
 
      test_cp1.stderr.on('data', function (data) {
-       test.fail(String(data));
+       test.notOk(true, String(data));
      });
 
      test_cp1.stdout.on('data', function (data) {
@@ -465,12 +490,12 @@ module.exports = {
    function(test, next) {
 
      test.plan(2);
-     var args = ['--port', '3000', '-p', test_key3, test_value3];
+     var args = ['--port', '3000', '--put', test_key3, '--value', test_value3];
      var test_cp1 = spawn(lev, args);
      var test_output1 = '';
 
      test_cp1.stderr.on('data', function (data) {
-       test.fail(String(data));
+       test.notOk(true, String(data));
      });
 
      test_cp1.stdout.on('data', function (data) {
@@ -478,8 +503,8 @@ module.exports = {
      });
 
      test_cp1.on('exit', function (data) {
-	
-     //	test.ok(false, "path params fail", "#TODO params need debugging");
+        
+     // test.ok(false, "path params fail", "#TODO params need debugging");
        test.equals(test_output1, OK, "Response Returned OK");
        var mcl = multilevel.client(); 
        var con = net.connect(3000);
@@ -487,7 +512,7 @@ module.exports = {
        
          mcl.get(test_key3, function (err, value) {
           
-           if (err) { return test.fail(err); }
+           if (err) { return test.notOk(true, err); }
            test.equals(test_value3, value, "Multilevel put value is present");
            mcl.close();
            next();
@@ -506,7 +531,7 @@ module.exports = {
      var test_output4 = '';
 
      test_cp.stderr.on('data', function (data) {
-       test.fail(String(data));
+       test.notOk(true, String(data));
      });
 
      test_cp.stdout.on('data', function (data) {
@@ -525,21 +550,27 @@ module.exports = {
        
          mcl.get(test_key3, function (err, value) {
            if (err) { 
-		 test.ok(true, "Key has been removed"); 
-             	 mcl.close();
-                 next();	
+                 test.ok(true, "Key has been removed"); 
+                 mcl.close();
+                 next();        
            } 
            
          });
-	});
-	*/
+        });
+        */
        
      });
    },
 
-"TearDown Server" : function(test, next) { test.plan(0); tcpserver.close(); next(); },
+   'TearDown Server': 
+   function(test, next) { 
+     test.plan(0); 
+     tcpserver.close(); 
+     next(); 
+   },
 
-"Create Stream Start End" : function( test, next ) { 
+   'Create Stream Start End': 
+   function(test, next) { 
    
      test.plan(1);
 
@@ -548,7 +579,7 @@ module.exports = {
      var test_output1 = '';
 
      test_cp1.stderr.on('data', function (data) {
-       test.fail(String(data));
+       test.notOk(true, String(data));
      });
 
      test_cp1.stdout.on('data', function (data) {
@@ -559,10 +590,10 @@ module.exports = {
 
        test.equals(test_output1,  '"' + test_key1  + '"\r\n');
      });
+  },
 
-},
-
-"Create Stream Limit" : function( test, next ) { 
+  'Create Stream Limit': 
+  function(test, next) { 
    
      test.plan(1);
 
@@ -571,7 +602,7 @@ module.exports = {
      var test_output1 = '';
 
      test_cp1.stderr.on('data', function (data) {
-       test.fail(String(data));
+       test.notOk(true, String(data));
      });
 
      test_cp1.stdout.on('data', function (data) {
@@ -579,11 +610,8 @@ module.exports = {
      });
 
      test_cp1.on('exit', function (data) {
-
-       test.equals(test_output1,  '"' + test_key1  + '"\r\n');
+       test.equals(test_output1, '"' + test_key1 + '"\r\n');
      });
 
-}
-
-
+  }
 };

@@ -1,6 +1,6 @@
 {
   "name": "lev",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "bin": "./lev",
   "description": "commandline and REPL access for leveldb",
   "main": "lev",
@@ -15,7 +15,7 @@
     "level-sublevel": "~4.8.0",
     "tabulate": "0.0.1",
     "config-chain": "~1.1.7",
-    "level-subtree": "~1.0.0",
+    "level-subtree": "~1.1.0",
     "archy": "0.0.2"
   },
   "devDependencies": {

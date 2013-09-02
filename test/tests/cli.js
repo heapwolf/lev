@@ -26,25 +26,15 @@ const test_value5 = 'testvalue5';
 var defaultargs = ['--format', 'false', '--encoding', 'utf8'];
 
 module.exports = {
-  'Test Usage message on no args':
+  'Test Usage message':
   function(test,next){
     
-    test.plan(2)
-    var test_cp1 = spawn(lev, []);
+    test.plan(1)
+    var test_cp1 = spawn(lev, ['-h']);
     var test_output1 = '';
 
     test_cp1.stderr.on('data', function (data) {
-      var isOk = false;
-
-      if (data.toString().indexOf("lev") == 0) {
-        isOk = true;   
-      }
-     
-      if (data.toString().indexOf("Argument") == 0) {
-        isOk = true;
-      }
-      test.ok(isOk, "Message has expected start")
-
+      test.notOk(true, 'Failed to display help')
     });
 
     test_cp1.stdout.on('data', function (data) {
@@ -52,7 +42,8 @@ module.exports = {
     });
 
     test_cp1.on('exit', function (data) {
-      
+      test.equal(0, String(test_output1).indexOf('lev'))
+      next() 
     })
   },
   'put to specific location':

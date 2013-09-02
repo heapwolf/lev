@@ -15,9 +15,10 @@ var level = require('level')
 
 var utils = require('./lib/utils')
 
-var argv = require('optimist')
+var args = require('optimist')
+
+var argv = args
   .usage('lev [path] [options]')
-  .check(function(){ if (process.argv.length == 2) return false }) 
 
   .alias('t', 'tree')
   .describe('tree', 'List sublevels as a tree')
@@ -45,15 +46,17 @@ var argv = require('optimist')
 
   .alias('e', 'end')
   .describe('end', 'The end key')
+
+  .describe('cd', 'Change into or create a sublevel')
+
+  .alias('h', 'help')
+  .describe('help', 'Print this help text')
   .argv
 
-/*
- * TODO 
-
-  .describe('cd', 'Change into sub-levels')
-  .alias('r', 'read')
-  .describe('read', 'Read from the database')
-*/
+if (argv.h || argv.help || process.argv.length == 2) {
+  console.log(args.help())
+  process.exit(0)
+}
 
 var db
 var tree

@@ -66,7 +66,7 @@ c9!25e7700452f8f269898cee9c18925350a6ef24
 >
 ```
 
-#### `get` Get the value of a key and inpspect it if possible 
+#### `get` Get the value of a key and inspect it if possible 
 Supports tab completion, same as the javascript function.
 
 ```

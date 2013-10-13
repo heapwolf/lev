@@ -83,7 +83,7 @@ var postConnect = function() {
   db = Sublevel(db, argv.sep)
 
   var allCommands = ['get', 'delr', 'limit', 'keys', 'start', 'end', 'tree'] 
-  var args = utils.filter(Object.keys(argv), allCommands.concat(Object.keys(db)))
+  var filter = utils.filter(Object.keys(args.argv), allCommands.concat(Object.keys(db)))
 
   if ('keys' in argv) {
     argv.values = false
@@ -91,10 +91,10 @@ var postConnect = function() {
   }
 
   ;['limit', 'start', 'end'].forEach(function(arg) {
-    if (argv[arg]) { argv.createReadStream = true }
+    if (filter[arg]) { argv.createReadStream = true }
   })
 
-  args.length > 0 
+  filter.length > 0 
     ? require('./lib/cli')(argv, db, tree)
     : require('./lib/repl')(argv, db, tree)
 }

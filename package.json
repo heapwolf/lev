@@ -5,7 +5,7 @@
   "description": "commandline and REPL access for leveldb",
   "main": "lev",
   "dependencies": {
-    "level": "~0.17.0",
+    "level": "0.17.0-1",
     "optimist": "0.3.4",
     "deepmerge": "~0.2.5",
     "level-delete-range": "0.1.0",

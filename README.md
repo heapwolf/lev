@@ -100,3 +100,6 @@ file.
 
 [0]:https://github.com/rvagg/node-levelup
 [1]:https://github.com/juliangruber/multilevel
+
+## License
+MIT

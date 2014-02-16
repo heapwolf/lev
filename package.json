@@ -2,7 +2,7 @@
   "name": "lev",
   "version": "1.2.2",
   "bin": "./lev",
-  "description": "commandline and REPL access for leveldb",
+  "description": "commandline and REPL access for leveldb asdfadsf asdfasdasdf asdfasdf asdfasdf",
   "main": "lev",
   "dependencies": {
     "level": "0.18.0",
@@ -11,12 +11,15 @@
     "level-delete-range": "0.1.0",
     "event-stream": "~3.0.14",
     "multilevel": "~5.3.2",
-    "reconnect": "~1.5.0",
+    "reconnect-net": "0.0.0",
     "level-sublevel": "~4.8.0",
     "tabulate": "0.0.1",
     "config-chain": "~1.1.7",
     "level-subtree": "~1.1.1",
-    "archy": "0.0.2"
+    "archy": "0.0.2",
+    "blessed": "0.0.29",
+    "hipster": "~0.17.1",
+    "charm": "~0.2.0"
   },
   "devDependencies": {
     "tap": "0.4.3",

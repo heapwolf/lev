@@ -1,65 +1,12 @@
 #!/usr/bin/env node
-
 var fs = require('fs')
-var path = require('path')
-var net = require('net')
-var readline = require('readline')
-
-var Tree = require('level-subtree')
+var pkg = require('./package.json')
 var deepmerge = require('deepmerge')
-var reconnect = require('reconnect')
-var Sublevel = require('level-sublevel')
-var multilevel = require('multilevel')
-var deleteRange = require('level-delete-range')
-var level = require('level')
+var ui = require('./lib/ui')
+var Tree = require('level-subtree')
+var client = require('./lib/client')
 
-var utils = require('./lib/utils')
-
-var args = require('optimist')
-
-var argv = args
-  .usage('lev [path] [options]')
-
-  .alias('t', 'tree')
-  .describe('tree', 'List sublevels as a tree')
-
-  .describe('c', 'Creates a database')
-
-  .alias('d', 'del')
-  .describe('del', 'Remove an entity')
-
-  .alias('g', 'get')
-  .describe('get', 'Get an record based on the key')
-
-  .describe('put --value', 'Insert a new value')  
-
-  .describe('port', 'Connect to a remote instance')
-
-  .alias('k', 'keys')
-  .describe('keys', 'Return only keys')
-
-  .alias('l', 'limit')
-  .describe('limit', 'The number of entities to return')
-
-  .alias('s', 'start')
-  .describe('start', 'The starting key for a read')
-
-  .alias('e', 'end')
-  .describe('end', 'The end key')
-
-  .describe('cd', 'Change into or create a sublevel')
-
-  .alias('h', 'help')
-  .describe('help', 'Print this help text')
-  .argv
-
-if (argv.h || argv.help || process.argv.length == 2) {
-  console.log(args.help())
-  process.exit(0)
-}
-
-var db
-var tree
+var conn = client.connections['Default']
 
 try {
   var settingsFile = utils.find('.lev');
@@ -73,63 +20,93 @@ catch(ex) {
   }
 }
 
-if (argv.encoding) {
-  argv.keyEncoding = argv.valueEncoding = argv.encoding
+var screen = ui.screen()
+var output = ui.output(screen)
+ui.output.log(pkg.name, 'version', pkg.version)
+ui.output.log('level version', pkg.dependencies.level, '\n')
+
+var query = {
+  start: '',
+  end: '',
+  reverse: false,
+  limit: -1
 }
 
-var postConnect = function() {
 
-  tree = Tree(db)
-  db = Sublevel(db, argv.sep)
+function isSublevel(key) {
+  if (key[0] == '[' && key[key.length-1] == ']') {
+    key = key.slice(1)
+    key = key.slice(0, -1)
+    return key
+  }
+  return
+}
 
-  var allCommands = ['get', 'delr', 'limit', 'keys', 'start', 'end', 'tree'] 
-  var filter = utils.filter(Object.keys(args.argv), allCommands.concat(Object.keys(db)))
+function render(keys) {
 
-  if ('keys' in argv) {
-    argv.values = false
-    argv.createReadStream = true
+  var keylist = ui.keylist(screen, keys)
+  var values = ui.values(screen)
+  var bounce
+
+  function selectSublevel(sublevel) {
+    conn = conn.sublevel(sublevel)
+    keys = []
+    // runQuery(parent.manifest.sublevels[sublevel].sublevels)
+    client.query('Default', query, render)
+    return
   }
 
-  ;['limit', 'start', 'end'].forEach(function(arg) {
-    if (filter[arg]) { argv.createReadStream = true }
+  function selectKey(key) {
+    
+    client.get('Default', key, function(err, value) {
+      values.resetScroll()
+      values.setContent(err || value)
+      screen.render()
+    })
+  }
+
+  keylist.on('scroll', function() {
+    clearTimeout(bounce)
+    bounce = setTimeout(function() {
+      var key = keys[keylist.selected]
+      if (!isSublevel(key)) {
+        selectKey(key)
+      }
+    }, 150)
+    
+    //
+    // main.setContent(formatMain({ fix: true }, data._user, main.width));
+    //
   })
 
-  filter.length > 0 
-    ? require('./lib/cli')(argv, db, tree)
-    : require('./lib/repl')(argv, db, tree)
-}
+  var commandbar = ui.commandbar(screen, query)
 
-if (argv.port) {
-
-  reconnect(function (stream) {
-
-    db = multilevel.client()
-    var dbstm = db.createRpcStream()
-    dbstm.pipe(stream).pipe(dbstm)
-
-    // If it is a put get or delete then close the process as soon as the data has returned.
-    var isPRD = false 
-
-    //If it is a query then we need to flag createReadStream
-    ;['put', 'get', 'del'].forEach(function(arg) {
-      if (argv[arg]) { isPRD = true }
-    })
-
-    stream.on('data', function(data) { 
-      if (isPRD) {
-        // We are CLI so close after response
-        process.exit()
+  screen.on('keypress', function(ch, key) {
+    if (screen.focused === keylist) {
+      if (key.name === 'tab') {
+        if (!key.shift) {
+          screen.focusNext();
+        } else {
+          screen.focusPrev();
+        }
+        screen.render();
+        return;
       }
-    })
+      if (key.name === 'enter') {
+        var key = keys[keylist.selected]
+        var sub = isSublevel(key)
+        if (sub) {
+          selectSublevel(sub)
+        }
+      }
+      if (key.name === 'escape') {
+        process.exit(0)
+      }
+    }
+  })
 
-    postConnect()
-  }).listen(argv.port)
-  
+  screen.render()
+  keylist.focus()
 }
-else {
 
-   db = level(utils.location(), argv)
-   postConnect();
-}
-
-
+client.query('Default', query, render)

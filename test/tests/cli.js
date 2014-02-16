@@ -269,11 +269,11 @@ module.exports = {
      });
 
      test_cp1.stdout.on('data', function (data) {
-       test_output1 += data;
+       test_output1 += String(data);
+       console.log(test_output1)
      });
 
      test_cp1.on('exit', function (data) {
-
        test.equals(test_output1,  '"' + test_value1  + '"\r\n');
      });
    },

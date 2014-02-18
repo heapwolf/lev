@@ -3,110 +3,128 @@ var fs = require('fs')
 var pkg = require('./package.json')
 var deepmerge = require('deepmerge')
 var ui = require('./lib/ui')
+var utils = require('./lib/utils')
 var Tree = require('level-subtree')
 var client = require('./lib/client')
+var argv = require('optimist').argv
 
-var conn = client.connections['Default']
+var settings
+var screen = ui.screen()
+var output = ui.output(screen)
+
+var model = {
+  query: {
+    start: '',
+    end: '',
+    reverse: false,
+    limit: -1
+  },
+  key: null,
+  sublevel: null,
+  connection: null,
+  settings: settings
+}
+
+ui.output.log('\n' + pkg.name, 'version', pkg.version)
+ui.output.log('level version', pkg.dependencies.level)
 
 try {
-  var settingsFile = utils.find('.lev');
-  var defaults = JSON.parse(fs.readFileSync(settingsFile)) || {}
-  argv = deepmerge(argv, defaults)
+  model.settingsFile = utils.find('.lev');
+  model.settings = JSON.parse(fs.readFileSync(model.settingsFile)) || {}
+  // argv = deepmerge(argv, defaults)
+  ui.output.log('reading config from', model.settingsFile, '\n')
 }
 catch(ex) {
 
   if (ex.name === 'SyntaxError') {
-    console.log('error parsing settings file [%s]', ex.message)
-  }
-}
-
-var screen = ui.screen()
-var output = ui.output(screen)
-ui.output.log(pkg.name, 'version', pkg.version)
-ui.output.log('level version', pkg.dependencies.level, '\n')
-
-var query = {
-  start: '',
-  end: '',
-  reverse: false,
-  limit: -1
-}
-
-
-function isSublevel(key) {
-  if (key[0] == '[' && key[key.length-1] == ']') {
-    key = key.slice(1)
-    key = key.slice(0, -1)
-    return key
-  }
-  return
-}
-
-function render(keys) {
-
-  var keylist = ui.keylist(screen, keys)
-  var values = ui.values(screen)
-  var bounce
-
-  function selectSublevel(sublevel) {
-    conn = conn.sublevel(sublevel)
-    keys = []
-    // runQuery(parent.manifest.sublevels[sublevel].sublevels)
-    client.query('Default', query, render)
-    return
+    ui.output.log('error parsing settings file [%s]', ex.message)
   }
 
-  function selectKey(key) {
-    
-    client.get('Default', key, function(err, value) {
-      values.resetScroll()
-      values.setContent(err || value)
-      screen.render()
+  ui.output.log(ex)
+}
+
+var tree = ui.tree(screen)
+var commands = ui.commands(screen, model)
+var values = ui.values(screen, model)
+var keylist = ui.keylist(screen, model)
+var query = ui.query(screen, model)
+var connections = ui.connections(screen, model)
+
+ui.commands.add({
+  name: 'QUERY',
+  prefix: '1',
+  keys: ['1'],
+  callback: function() {
+    connections.hide()
+    tree.hide()
+    query.toggle()
+    screen.render()
+  }
+})
+
+ui.commands.add({
+  name: 'DELETE',
+  prefix: '2',
+  keys: ['2'],
+  callback: function() {
+    values.set('width', '20%')
+    screen.render()
+  }
+})
+
+ui.commands.add({
+  name: 'EDIT',
+  prefix: '3',
+  keys: ['3'],
+  callback: function() {
+    values.on('click', function() {
+      var opts = { value: values.getText() }
+      screen.readEditor(opts, function(err, value) {
+        if (err) output.error(err)
+        client.put(list.selected, value)
+        values.setContent(syntax(value))
+      })
     })
   }
+})
 
-  keylist.on('scroll', function() {
-    clearTimeout(bounce)
-    bounce = setTimeout(function() {
-      var key = keys[keylist.selected]
-      if (!isSublevel(key)) {
-        selectKey(key)
-      }
-    }, 150)
-    
-    //
-    // main.setContent(formatMain({ fix: true }, data._user, main.width));
-    //
-  })
+ui.commands.add({
+  name: 'TREE',
+  prefix: '4',
+  keys: ['4'],
+  callback: function() {
+    connections.hide()
+    query.hide()
+    ui.tree.update()
+    tree.toggle()
+    screen.render()
+  }
+})
 
-  var commandbar = ui.commandbar(screen, query)
+ui.commands.add({
+  name: 'CONNECTIONS',
+  prefix: '5',
+  keys: ['5'],
+  callback: function() {
+    query.hide()
+    tree.hide()
+    connections.toggle(screen)
+    screen.render()
+  }
+})
 
-  screen.on('keypress', function(ch, key) {
-    if (screen.focused === keylist) {
-      if (key.name === 'tab') {
-        if (!key.shift) {
-          screen.focusNext();
-        } else {
-          screen.focusPrev();
-        }
-        screen.render();
-        return;
-      }
-      if (key.name === 'enter') {
-        var key = keys[keylist.selected]
-        var sub = isSublevel(key)
-        if (sub) {
-          selectSublevel(sub)
-        }
-      }
-      if (key.name === 'escape') {
-        process.exit(0)
-      }
+screen.on('keypress', function(ch, key) {
+  if (key.name === 'tab') {
+    if (!key.shift) {
+      screen.focusNext()
+    } else {
+      screen.focusPrev()
     }
-  })
+    screen.render()
+    return
+  }
+})
 
-  screen.render()
-  keylist.focus()
-}
-
-client.query('Default', query, render)
+connections.list.focus()
+connections.list.select(0)
+screen.render()

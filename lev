@@ -8,6 +8,47 @@ var Tree = require('level-subtree')
 var client = require('./lib/client')
 var argv = require('optimist').argv
 
+var args = require('optimist')
+
+var argv = args
+  .usage('lev [path] [options]')
+
+  .alias('t', 'tree')
+  .describe('tree', 'List sublevels as a tree')
+
+  .describe('c', 'Creates a database')
+
+  .alias('d', 'del')
+  .describe('del', 'Remove an entity')
+
+  .alias('g', 'get')
+  .describe('get', 'Get an record based on the key')
+
+  .describe('put --value', 'Insert a new value')  
+
+  .alias('k', 'keys')
+  .describe('keys', 'Return only keys')
+
+  .alias('l', 'limit')
+  .describe('limit', 'The number of entities to return')
+
+  .alias('s', 'start')
+  .describe('start', 'The starting key for a read')
+
+  .alias('e', 'end')
+  .describe('end', 'The end key')
+
+  .describe('cd', 'Change into or create a sublevel')
+
+  .alias('h', 'help')
+  .describe('help', 'Print this help text')
+  .argv
+
+if (argv.h || argv.help) {
+  console.log(args.help())
+  process.exit(0)
+}
+
 var settings
 var screen = ui.screen()
 var output = ui.output(screen)
@@ -31,7 +72,6 @@ ui.output.log('level version', pkg.dependencies.level)
 try {
   model.settingsFile = utils.find('.lev');
   model.settings = JSON.parse(fs.readFileSync(model.settingsFile)) || {}
-  // argv = deepmerge(argv, defaults)
   ui.output.log('reading config from', model.settingsFile, '\n')
 }
 catch(ex) {
@@ -58,6 +98,7 @@ ui.commands.add({
     connections.hide()
     tree.hide()
     query.toggle()
+    ui.query.focus()
     screen.render()
   }
 })
@@ -77,13 +118,13 @@ ui.commands.add({
   prefix: '3',
   keys: ['3'],
   callback: function() {
-    values.on('click', function() {
-      var opts = { value: values.getText() }
-      screen.readEditor(opts, function(err, value) {
-        if (err) output.error(err)
-        client.put(list.selected, value)
-        values.setContent(syntax(value))
-      })
+    var opts = { value: values.getText() }
+    screen.readEditor(opts, function(err, value) {
+      if (err) ui.output.error(err)
+      var key = keylist.items[keylist.selected].content
+      client.put(key, value)
+      values.setContent(value)
+      screen.render()
     })
   }
 })
@@ -108,13 +149,13 @@ ui.commands.add({
   callback: function() {
     query.hide()
     tree.hide()
-    connections.toggle(screen)
+    ui.connections.toggle(screen)
     screen.render()
   }
 })
 
 screen.on('keypress', function(ch, key) {
-  if (key.name === 'tab') {
+  if (key && key.name === 'tab') {
     if (!key.shift) {
       screen.focusNext()
     } else {

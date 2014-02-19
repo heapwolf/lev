@@ -1,8 +1,8 @@
 {
   "name": "lev",
-  "version": "1.2.2",
+  "version": "2.0.0",
   "bin": "./lev",
-  "description": "commandline and REPL access for leveldb asdfadsf asdfasdasdf asdfasdf asdfasdf",
+  "description": "CLI/REPL/TUI for levelDB/Nodebase",
   "main": "lev",
   "dependencies": {
     "level": "0.18.0",
@@ -33,7 +33,17 @@
     "url": "git://github.com/hij1nx/lev.git"
   },
   "keywords": [
-    "leveldb"
+    "leveldb",
+    "levelup",
+    "level",
+    "repl",
+    "database",
+    "databases",
+    "nodebase",
+    "db",
+    "keyvalue",
+    "key/value",
+    "tui"
   ],
   "preferGlobal": true,
   "author": "hij1nx",

@@ -121,8 +121,8 @@ function tui() {
   var keylist = ui.keylist(screen, model, client)
   var query = ui.query(screen, model, client)
   var connections = ui.connections(screen, model, client)
-  var tree = ui.tree(screen, client)
-  var info = ui.info(screen, client)
+  var tree = ui.tree(screen, model, client)
+  var info = ui.info(screen, model, client)
 
   ui.commands.add({
     name: 'QUERY',

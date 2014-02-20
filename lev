@@ -51,6 +51,7 @@ if (argv.h || argv.help) {
 
 var settings
 var screen = ui.screen()
+screen._.busy = false
 var output = ui.output(screen)
 
 var model = {
@@ -83,12 +84,13 @@ catch(ex) {
   ui.output.log(ex)
 }
 
-var tree = ui.tree(screen)
 var commands = ui.commands(screen, model)
 var values = ui.values(screen, model)
 var keylist = ui.keylist(screen, model)
 var query = ui.query(screen, model)
 var connections = ui.connections(screen, model)
+var tree = ui.tree(screen)
+var info = ui.info(screen)
 
 ui.commands.add({
   name: 'QUERY',
@@ -97,8 +99,8 @@ ui.commands.add({
   callback: function() {
     connections.hide()
     tree.hide()
+    info.hide()
     query.toggle()
-    ui.query.focus()
     screen.render()
   }
 })
@@ -108,8 +110,22 @@ ui.commands.add({
   prefix: '2',
   keys: ['2'],
   callback: function() {
-    values.set('width', '20%')
-    screen.render()
+
+    var selection = keylist.items[keylist.selected]
+
+    if (!selection) return
+
+    var key = selection.content
+
+    if (!key || !ui.keylist.isSublevel(key)) {
+      return ui.output.log('NOT OK!', 'unable to delete that key\n')
+    }
+
+    client.del(key, function(err) {
+      if (err) return ui.output.log('NOT OK!', err)
+      keylist.removeItem(key)
+      screen.render()
+    })
   }
 })
 
@@ -120,9 +136,15 @@ ui.commands.add({
   callback: function() {
     var opts = { value: values.getText() }
     screen.readEditor(opts, function(err, value) {
-      if (err) ui.output.error(err)
+      if (err) return ui.output.error(err)
+      if (opts.value === value) return
+
+      //
+      // TODO: if encoding is JSON, try to json parse.
+      //
+
       var key = keylist.items[keylist.selected].content
-      client.put(key, value)
+      client.put(key, value.trim())
       values.setContent(value)
       screen.render()
     })
@@ -136,6 +158,7 @@ ui.commands.add({
   callback: function() {
     connections.hide()
     query.hide()
+    info.hide()
     ui.tree.update()
     tree.toggle()
     screen.render()
@@ -143,29 +166,53 @@ ui.commands.add({
 })
 
 ui.commands.add({
-  name: 'CONNECTIONS',
+  name: 'INFO',
   prefix: '5',
   keys: ['5'],
   callback: function() {
+    connections.hide()
     query.hide()
     tree.hide()
-    ui.connections.toggle(screen)
+    ui.info.update(model, function(err) {
+      if (err) return ui.output.log(err)
+      info.toggle()
+      screen.render()
+    })
+  }
+})
+
+ui.commands.add({
+  name: 'CONNECTIONS',
+  prefix: '6',
+  keys: ['6'],
+  callback: function() {
+    query.hide()
+    tree.hide()
+    info.hide()
+    connections.toggle()
+    connections.focus()
     screen.render()
   }
 })
 
 screen.on('keypress', function(ch, key) {
-  if (key && key.name === 'tab') {
+  if (key && key.name == 'tab') {
     if (!key.shift) {
       screen.focusNext()
     } else {
       screen.focusPrev()
     }
-    screen.render()
-    return
+    return screen.render()
+  }
+  else if (key && key.name == 'escape') {
+    connections.hide()
+    query.hide()
+    tree.hide()
+    info.hide()
+    return screen.render()
   }
 })
 
-connections.list.focus()
-connections.list.select(0)
+connections.focus()
+//connections.list.select(0)
 screen.render()

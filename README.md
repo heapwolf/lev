@@ -6,7 +6,14 @@ Commandline [LevelDB][0] management.
 - Interactive data management
 - REPL features auto-complete and suggestions for keys.
 - REPL automatically saves and reloads REPL history.
+- A TUI
 - Connect to a network enabled database via [multilevel][1].
+
+![img](/doc/1.png)
+
+![img](/doc/2.png)
+
+![img](/doc/3.png)
 
 # INSTALLATION
 ```bash

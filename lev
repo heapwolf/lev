@@ -174,7 +174,10 @@ ui.commands.add({
     query.hide()
     tree.hide()
     ui.info.update(model, function(err) {
-      if (err) return ui.output.log(err)
+      if (err) {
+        var msg = 'NOT OK! Possibly huge query ('
+        return ui.output.log(msg + err.message + ')')
+      }
       info.toggle()
       screen.render()
     })
@@ -189,30 +192,29 @@ ui.commands.add({
     query.hide()
     tree.hide()
     info.hide()
-    connections.toggle()
+    connections.toggleVisible()
     connections.focus()
     screen.render()
   }
 })
 
-screen.on('keypress', function(ch, key) {
-  if (key && key.name == 'tab') {
-    if (!key.shift) {
-      screen.focusNext()
-    } else {
-      screen.focusPrev()
-    }
-    return screen.render()
-  }
-  else if (key && key.name == 'escape') {
-    connections.hide()
-    query.hide()
-    tree.hide()
-    info.hide()
-    return screen.render()
-  }
-})
+// screen.on('keypress', function(ch, key) {
+//   if (key && key.name == 'tab') {
+//     if (!key.shift) {
+//       screen.focusNext()
+//     } else {
+//       screen.focusPrev()
+//     }
+//     return screen.render()
+//   }
+//   else if (key && key.name == 'escape') {
+//     connections.hide()
+//     query.hide()
+//     tree.hide()
+//     info.hide()
+//     return screen.render()
+//   }
+// })
 
 connections.focus()
-//connections.list.select(0)
 screen.render()

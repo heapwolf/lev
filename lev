@@ -5,13 +5,27 @@ var deepmerge = require('deepmerge')
 var ui = require('./lib/ui')
 var utils = require('./lib/utils')
 var Tree = require('level-subtree')
-var client = require('./lib/client')
-var argv = require('optimist').argv
-
 var args = require('optimist')
+var Client = require('./lib/client')
+
+var client
+var screen
+var output
+var log
+
+var model = {
+  query: {
+    start: '',
+    end: '',
+    reverse: false,
+    limit: -1
+  },
+  key: null,
+  settings: {}
+}
 
 var argv = args
-  .usage('lev [path] [options]')
+  .usage('\nUSAGE: lev [path] [options]')
 
   .alias('t', 'tree')
   .describe('tree', 'List sublevels as a tree')
@@ -44,177 +58,195 @@ var argv = args
   .describe('help', 'Print this help text')
   .argv
 
-if (argv.h || argv.help) {
+function printHelp() {
   console.log(args.help())
   process.exit(0)
 }
 
-var settings
-var screen = ui.screen()
-screen._.busy = false
-var output = ui.output(screen)
-
-var model = {
-  query: {
-    start: '',
-    end: '',
-    reverse: false,
-    limit: -1
-  },
-  key: null,
-  sublevel: null,
-  connection: null,
-  settings: settings
+if (process.argv.length > 2) {
+  client = Client(console)
+  log = console.log
+}
+else {
+  client = Client(ui.output)
+  screen = ui.screen()
+  output = ui.output(screen)
+  log = ui.output.log
 }
 
-ui.output.log('\n' + pkg.name, 'version', pkg.version)
-ui.output.log('level version', pkg.dependencies.level)
+log('\n' + pkg.name, 'version', pkg.version)
+log('level version', pkg.dependencies.level)
+
+if (argv.h || argv.help) {
+  printHelp()
+}
 
 try {
+
   model.settingsFile = utils.find('.lev');
   model.settings = JSON.parse(fs.readFileSync(model.settingsFile)) || {}
-  ui.output.log('reading config from', model.settingsFile, '\n')
+  log('reading config from', model.settingsFile, '\n')
 }
 catch(ex) {
 
   if (ex.name === 'SyntaxError') {
-    ui.output.log('error parsing settings file [%s]', ex.message)
+    log('error parsing settings file [%s]', ex.message)
   }
-
-  ui.output.log(ex)
+  log(ex)
 }
 
-var commands = ui.commands(screen, model)
-var values = ui.values(screen, model)
-var keylist = ui.keylist(screen, model)
-var query = ui.query(screen, model)
-var connections = ui.connections(screen, model)
-var tree = ui.tree(screen)
-var info = ui.info(screen)
-
-ui.commands.add({
-  name: 'QUERY',
-  prefix: '1',
-  keys: ['1'],
-  callback: function() {
-    connections.hide()
-    tree.hide()
-    info.hide()
-    query.toggle()
-    screen.render()
+if (process.argv.length > 2) {
+  
+  if (argv._.length == 0) {
+    console.log('No path specified')
+    process.exit(1)
   }
-})
 
-ui.commands.add({
-  name: 'DELETE',
-  prefix: '2',
-  keys: ['2'],
-  callback: function() {
+  if (argv.i) {
+    require('./lib/repl')(argv, model, client)
+  }
+  else {
+    require('./lib/cli')(argv, model, client)
+  }
+}
+else {
 
-    var selection = keylist.items[keylist.selected]
+  tui()
+}
 
-    if (!selection) return
+function tui() {
 
-    var key = selection.content
+  var commands = ui.commands(screen, model, client)
+  var values = ui.values(screen, model, client)
+  var keylist = ui.keylist(screen, model, client)
+  var query = ui.query(screen, model, client)
+  var connections = ui.connections(screen, model, client)
+  var tree = ui.tree(screen, client)
+  var info = ui.info(screen, client)
 
-    if (!key || !ui.keylist.isSublevel(key)) {
-      return ui.output.log('NOT OK!', 'unable to delete that key\n')
+  ui.commands.add({
+    name: 'QUERY',
+    prefix: '1',
+    keys: ['1'],
+    callback: function() {
+      connections.hide()
+      tree.hide()
+      info.hide()
+      query.toggle()
+      screen.render()
     }
+  })
 
-    client.del(key, function(err) {
-      if (err) return ui.output.log('NOT OK!', err)
-      keylist.removeItem(key)
-      screen.render()
-    })
-  }
-})
+  ui.commands.add({
+    name: 'DELETE',
+    prefix: '2',
+    keys: ['2'],
+    callback: function() {
 
-ui.commands.add({
-  name: 'EDIT',
-  prefix: '3',
-  keys: ['3'],
-  callback: function() {
-    var opts = { value: values.getText() }
-    screen.readEditor(opts, function(err, value) {
-      if (err) return ui.output.error(err)
-      if (opts.value === value) return
+      var selection = keylist.items[keylist.selected]
 
-      //
-      // TODO: if encoding is JSON, try to json parse.
-      //
+      if (!selection) return
 
-      var key = keylist.items[keylist.selected].content
-      client.put(key, value.trim())
-      values.setContent(value)
-      screen.render()
-    })
-  }
-})
+      var key = selection.content
 
-ui.commands.add({
-  name: 'TREE',
-  prefix: '4',
-  keys: ['4'],
-  callback: function() {
-    connections.hide()
-    query.hide()
-    info.hide()
-    ui.tree.update()
-    tree.toggle()
-    screen.render()
-  }
-})
-
-ui.commands.add({
-  name: 'INFO',
-  prefix: '5',
-  keys: ['5'],
-  callback: function() {
-    connections.hide()
-    query.hide()
-    tree.hide()
-    ui.info.update(model, function(err) {
-      if (err) {
-        var msg = 'NOT OK! Possibly huge query ('
-        return ui.output.log(msg + err.message + ')')
+      if (!key || !ui.keylist.isSublevel(key)) {
+        return log('NOT OK!', 'unable to delete that key\n')
       }
-      info.toggle()
+
+      client.del(key, function(err) {
+        if (err) return log('NOT OK!', err)
+        keylist.removeItem(key)
+        screen.render()
+      })
+    }
+  })
+
+  ui.commands.add({
+    name: 'EDIT',
+    prefix: '3',
+    keys: ['3'],
+    callback: function() {
+      var opts = { value: values.getText() }
+      screen.readEditor(opts, function(err, value) {
+        if (err) return log(err)
+        if (opts.value === value) return
+
+        //
+        // TODO: if encoding is JSON, try to json parse.
+        //
+
+        var key = keylist.items[keylist.selected].content
+        client.put(key, value.trim())
+        values.setContent(value)
+        screen.render()
+      })
+    }
+  })
+
+  ui.commands.add({
+    name: 'TREE',
+    prefix: '4',
+    keys: ['4'],
+    callback: function() {
+      connections.hide()
+      query.hide()
+      info.hide()
+      ui.tree.update()
+      tree.toggle()
       screen.render()
-    })
-  }
-})
+    }
+  })
 
-ui.commands.add({
-  name: 'CONNECTIONS',
-  prefix: '6',
-  keys: ['6'],
-  callback: function() {
-    query.hide()
-    tree.hide()
-    info.hide()
-    connections.toggleVisible()
-    connections.focus()
-    screen.render()
-  }
-})
+  ui.commands.add({
+    name: 'INFO',
+    prefix: '5',
+    keys: ['5'],
+    callback: function() {
+      connections.hide()
+      query.hide()
+      tree.hide()
+      ui.info.update(model, function(err) {
+        if (err) {
+          var msg = 'NOT OK! Possibly huge query ('
+          return log(msg + err.message + ')')
+        }
+        info.toggle()
+        screen.render()
+      })
+    }
+  })
 
-// screen.on('keypress', function(ch, key) {
-//   if (key && key.name == 'tab') {
-//     if (!key.shift) {
-//       screen.focusNext()
-//     } else {
-//       screen.focusPrev()
-//     }
-//     return screen.render()
-//   }
-//   else if (key && key.name == 'escape') {
-//     connections.hide()
-//     query.hide()
-//     tree.hide()
-//     info.hide()
-//     return screen.render()
-//   }
-// })
+  ui.commands.add({
+    name: 'CONNECTIONS',
+    prefix: '6',
+    keys: ['6'],
+    callback: function() {
+      query.hide()
+      tree.hide()
+      info.hide()
+      connections.toggle()
+      screen.render()
+    }
+  })
 
-connections.focus()
-screen.render()
+  screen.on('keypress', function(ch, key) {
+    if (key && key.name == 'tab') {
+      if (!key.shift) {
+        screen.focusNext()
+      } else {
+        screen.focusPrev()
+      }
+      return screen.render()
+    }
+    else if (key && key.name == 'escape') {
+      connections.hide()
+      query.hide()
+      tree.hide()
+      info.hide()
+      return screen.render()
+    }
+  })
+
+  connections.focus()
+  screen.render()
+}

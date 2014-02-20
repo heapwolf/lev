@@ -9,24 +9,26 @@ Commandline [LevelDB][0] management.
 - A TUI
 - Connect to a network enabled database via [multilevel][1].
 
+# INSTALLATION
+```bash
+$npm install lev -g
+```
+
+# TUI EXAMPLES
+This is the default mode when you type `lev` at the commandline.
+
 ![img](/doc/1.png)
 
 ![img](/doc/2.png)
 
 ![img](/doc/3.png)
 
-# INSTALLATION
-```bash
-$npm install lev -g
-```
 
 # CLI EXAMPLES
-
-```bash
-$ lev
-``` 
-
-Get the first 10 keys in the database, the path is optional but if ommited a database will be created in the current working directory.
+The `CLI` mode is useful for bash scripting. Here's an example 
+where we get the first 10 keys in the database, the path is optional 
+but if ommited a database will be created in the current working 
+directory.
 
 ```bash
 $ lev path/to/db --keys --limit 10
@@ -48,7 +50,8 @@ Get the key `welcome` from inside the 2 sublevels deep
 lev ./db --cd greetings/en --get 'welcome'
 ```
 
-For connecting to a [multilevel][1] enabled instance, specify the `port` parameter:
+For connecting to a [multilevel][1] enabled instance, specify the 
+`port` parameter:
 
 `lev --port 1337 --keys ...`
 
@@ -58,9 +61,10 @@ Start the REPL by providing only a path or host and port
 $lev path/to/db
 ```
 
-Commands in the REPL also match the API. But wait! There are a subset of commands 
-that make common operations faster, easier and more fun. The following `keys` and 
-`sublevels` are arbitrary and for the purpose of this example only.
+Commands in the REPL also match the API. But wait! There are a 
+subset of commands that make common operations faster, easier and 
+more fun. The following `keys` and `sublevels` are arbitrary and for 
+the purpose of this example only.
 
 #### `ls` A listing of keys in the current sublevel
 Supports tab completion, same as the javascript function.
@@ -83,8 +87,9 @@ Supports tab completion, same as the javascript function.
 ```
 
 #### `cd` create or change into a sublevel
-Supports `cd ..` to navigate down a level. `cd /` to navigate to the root of the database.
-And `cd foo/bar/bazz` to navigate up to a deeply nested sublevel in the database.
+Supports `cd ..` to navigate down a level. `cd /` to navigate to the 
+root of the database. And `cd foo/bar/bazz` to navigate up to a deeply 
+nested sublevel in the database.
 
 ```
 >cd 97a24cb977c1bd9
@@ -93,9 +98,9 @@ c9!b5db29d11c6556b7d5b7ffe272dcefec9edae6
 ```
 
 ## Default Configuration
-You can create a `.lev` file in your home directory and it will be used to set 
-the defaults. Command line arguments will override the default settings in this 
-file.
+You can create a `.lev` file in your home directory and it will be used 
+to set  the defaults. Command line arguments will override the default 
+settings in this file.
 
 ```json
 {

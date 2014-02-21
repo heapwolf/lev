@@ -2,12 +2,11 @@
 Complete [LevelDB][0] management for your terminal.
 
 # FEATURES
-- Command line data management
-- Interactive data management
-- REPL features colorized auto-complete and suggestions for keys.
-- REPL automatically saves and reloads REPL history.
-- A TUI
-- Connect to a network enabled database via [multilevel][1].
+- A Terminal User Interface
+- REPL with colorized auto-complete and key suggestions
+- REPL automatically saves and reloads REPL history
+- Scriptable from the command line
+- Connect to local or network enabled instances
 
 # INSTALLATION
 ```bash

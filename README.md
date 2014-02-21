@@ -55,9 +55,10 @@ For connecting to a [multilevel][1] enabled instance, specify the
 `lev --manifest path/to/manifest.json --port 1337 --keys ...`
 
 ## REPL
-Start the REPL by providing only a path or host and port
+
+Start the interactive mod by providing a path and the `-i` option.
 ```bash
-$lev path/to/db
+$lev path/to/db -i
 ```
 
 #### `ls` List the keys in the current range.
@@ -79,7 +80,7 @@ $lev path/to/db
 Supports `cd ..` to navigate down a level. `cd /` to navigate to the 
 root of the database. And supports paths `cd foo/bar/bazz`.
 
-## Default Configuration
+## USER SETTINGS
 You can create a `.lev` file in your home directory and it will be used 
 to set the defaults. Command line arguments will override the default 
 settings in this file.

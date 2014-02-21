@@ -4,7 +4,7 @@ Commandline [LevelDB][0] management.
 # FEATURES
 - Command line data management
 - Interactive data management
-- REPL features auto-complete and suggestions for keys.
+- REPL features colorized auto-complete and suggestions for keys.
 - REPL automatically saves and reloads REPL history.
 - A TUI
 - Connect to a network enabled database via [multilevel][1].
@@ -74,15 +74,9 @@ more fun. The following `keys` and `sublevels` are arbitrary and for
 the purpose of this example only.
 
 #### `ls` A listing of keys in the current sublevel
-Supports tab completion, same as the javascript function.
-```
->ls
-81!6dfb2cf92a411302b97a24cb977c1bd981711c
-81!8613357d10da3ae2d295a53137b750d6b324b5
-c9!25e7700452f8f269898cee9c18925350a6ef24
-8c!699404e9c54349c32f4ca88a9ceea9382cffe9
->
-```
+Supports colorized tab completion, same as the javascript function.
+
+![img](/doc/4.png)
 
 #### `get` Get the value of a key and inspect it if possible 
 Supports tab completion, same as the javascript function.

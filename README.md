@@ -33,18 +33,10 @@ the keys in the current level). And a few others detailed below.
 
 # CLI EXAMPLES
 The `CLI` mode is useful for bash scripting. Here's an example 
-where we get the first 10 keys in the database, the path is optional 
-but if ommited a database will be created in the current working 
-directory.
+where we get the first 10 keys in the database.
 
 ```bash
 $ lev path/to/db --keys --limit 10
-```
-
-or short hand 
-
-```bash
-$ lev path/to/db -kl 10
 ```
 
 Get the first ten records starting at `bazz` and ending at `zomg`.
@@ -58,9 +50,9 @@ lev ./db --cd greetings/en --get 'welcome'
 ```
 
 For connecting to a [multilevel][1] enabled instance, specify the 
-`port` parameter:
+`port` and `manifest` parameters...
 
-`lev --port 1337 --keys ...`
+`lev --manifest path/to/manifest.json --port 1337 --keys ...`
 
 ## REPL
 Start the REPL by providing only a path or host and port
@@ -68,47 +60,40 @@ Start the REPL by providing only a path or host and port
 $lev path/to/db
 ```
 
-Commands in the REPL also match the API. But wait! There are a 
-subset of commands that make common operations faster, easier and 
-more fun. The following `keys` and `sublevels` are arbitrary and for 
-the purpose of this example only.
-
-#### `ls` A listing of keys in the current sublevel
-Supports colorized tab completion, same as the javascript function.
+#### `ls` List the keys in the current range.
 
 ![img](/doc/4.png)
 
-#### `get` Get the value of a key and inspect it if possible 
-Supports tab completion, same as the javascript function.
+#### `start` Sets the start of the current range
 
-```
->get 81!6dfb2cf92a411302b97a24cb977c1bd981711c
-'{ "greeting": "hello, world!" }'
->
-```
+#### `end` Sets the lower bound of the current range
 
-#### `cd` create or change into a sublevel
+#### `limit` Limit the number of results in the current range
+
+#### `reverse` Reverse the results in the current range
+
+#### `get` Get a value from the current range
+
+#### `cd` Set the current sublevel
+
 Supports `cd ..` to navigate down a level. `cd /` to navigate to the 
-root of the database. And `cd foo/bar/bazz` to navigate up to a deeply 
-nested sublevel in the database.
-
-```
->cd 97a24cb977c1bd9
-/97a24cb977c1bd9>ls
-c9!b5db29d11c6556b7d5b7ffe272dcefec9edae6
-```
+root of the database. And supports paths `cd foo/bar/bazz`.
 
 ## Default Configuration
 You can create a `.lev` file in your home directory and it will be used 
-to set  the defaults. Command line arguments will override the default 
+to set the defaults. Command line arguments will override the default 
 settings in this file.
 
 ```json
 {
-  "createIfMissing": true,
-  "encoding": "json"
+  "defaults": {
+    "createIfMissing": true,
+    "valueEncoding": "json",
+    "keyEncoding": "json",
+    "compression": "true",
+    "cacheSize": 8388608
+  }
 }
-
 ```
 
 [0]:https://github.com/rvagg/node-levelup

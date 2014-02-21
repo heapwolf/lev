@@ -19,6 +19,13 @@ This is the default mode when you type `lev` at the commandline.
 
 ![img](/doc/1.png)
 
+The UI has a built in `REPL`, like a browser. In additon to being
+the Node.js repl, It has some special commands. Just like `VIM`, 
+use `:` to invoke input.
+
+`start [string]`, `end [string]`, `limit [number]`, `ls` (to list 
+the keys in the current level). And a few others detailed below.
+
 ![img](/doc/2.png)
 
 ![img](/doc/3.png)

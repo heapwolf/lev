@@ -1,5 +1,5 @@
 # SYNOPSIS
-Commandline [LevelDB][0] management.
+Complete [LevelDB][0] management for your terminal.
 
 # FEATURES
 - Command line data management

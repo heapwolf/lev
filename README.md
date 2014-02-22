@@ -64,17 +64,19 @@ $lev path/to/db -i
 
 ![img](/doc/4.png)
 
-#### `start` Sets the start of the current range
+#### `start [string]` Sets the start of the current range
+When `createReadStream()` is created on the current sublevel (or root)
+it will use this value as a parameter.
 
-#### `end` Sets the lower bound of the current range
+#### `end [string]` Sets the lower bound of the current range
 
-#### `limit` Limit the number of results in the current range
+#### `limit [number]` Limit the number of results in the current range
 
 #### `reverse` Reverse the results in the current range
 
-#### `get` Get a value from the current range
+#### `get [string]` Get a value from the current range
 
-#### `cd` Set the current sublevel
+#### `cd [string]` Set the current sublevel
 
 Supports `cd ..` to navigate down a level. `cd /` to navigate to the 
 root of the database. And supports paths `cd foo/bar/bazz`.

@@ -15,6 +15,8 @@ $npm install lev -g
 
 # TUI EXAMPLES
 This is the default mode when you type `lev` at the commandline.
+I recommend a modern terminal program like [iTerm2][2] on OSX or
+[urxvt] on Linux.
 
 ![img](/doc/1.png)
 
@@ -100,6 +102,8 @@ settings in this file.
 
 [0]:https://github.com/rvagg/node-levelup
 [1]:https://github.com/juliangruber/multilevel
+[2]:http://www.iterm2.com/
+[3]:http://software.schmorp.de/pkg/rxvt-unicode.html
 
 ## License
 MIT

@@ -71,7 +71,7 @@ else {
 }
 
 log('\n' + pkg.name, 'version', pkg.version)
-log('level version', pkg.dependencies.level)
+log('level version', pkg.dependencies.level + '\n')
 
 if (process.argv.length > 2) {
 

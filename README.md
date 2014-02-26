@@ -18,14 +18,11 @@ This is the default mode when you type `lev` at the commandline.
 I recommend a modern terminal program like [iTerm2][2] on OSX or
 [urxvt] on Linux.
 
+On the left you have a list of keys, on the right you have the
+selected value. You can edit the selected value by clicking on it.
+Save the modified value by pressing `control+s`.
+
 ![img](/doc/1.png)
-
-The UI has a built in `REPL`, like a browser. In additon to being
-the Node.js repl, It has some special commands. Just like `VIM`, 
-use `:` to invoke input.
-
-`start [string]`, `end [string]`, `limit [number]`, `ls` (to list 
-the keys in the current level). And a few others detailed below.
 
 ![img](/doc/2.png)
 

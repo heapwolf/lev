@@ -13,7 +13,7 @@ var model = {
     start: '',
     end: '',
     reverse: false,
-    limit: -1
+    limit: 1000
   },
   key: null,
   settings: {}

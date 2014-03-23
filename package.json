@@ -13,21 +13,17 @@
     "multilevel": "~5.3.2",
     "reconnect-net": "0.0.0",
     "level-sublevel": "~4.8.0",
-    "tabulate": "0.0.1",
-    "config-chain": "~1.1.7",
+    "tabulate": "1.0.0",
     "level-subtree": "~1.1.1",
     "archy": "0.0.2",
     "blessed": "0.0.29",
-    "hipster": "~0.17.1",
-    "charm": "~0.2.0",
     "level-manifest": "~1.2.0"
   },
   "devDependencies": {
-    "tap": "0.4.3",
-    "async": "0.1.22"
+    "tap": "0.4.3"
   },
   "scripts": {
-    "test": "./test/test"
+    "test": "bin/tap.js test/*.js"
   },
   "repository": {
     "type": "git",
@@ -35,6 +31,8 @@
   },
   "keywords": [
     "leveldb",
+    "levelDB",
+    "level-db",
     "levelup",
     "level",
     "repl",

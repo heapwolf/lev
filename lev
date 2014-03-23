@@ -2,22 +2,12 @@
 var fs = require('fs')
 var args = require('optimist')
 var pkg = require('./package.json')
+var utils = require('./lib/utils')
 var UI = require('./lib/ui')
 
 var client
 var output
 var log
-
-var model = {
-  query: {
-    start: '',
-    end: '',
-    reverse: false,
-    limit: 1000
-  },
-  key: null,
-  settings: {}
-}
 
 var argv = args
   .usage('\nUSAGE: lev [path] [options]')
@@ -29,6 +19,9 @@ var argv = args
 
   .alias('d', 'del')
   .describe('del', 'Remove an entity')
+
+  .alias('q', 'quiet')
+  .describe('quiet', 'Only print critical messages')
 
   .alias('g', 'get')
   .describe('get', 'Get an record based on the key')
@@ -53,25 +46,25 @@ var argv = args
   .describe('help', 'Print this help text')
   .argv
 
-function printHelp() {
+if (argv.h || argv.help) {
   console.log(args.help())
   process.exit(0)
 }
 
-if (argv.h || argv.help) {
-  printHelp()
-}
+var config = utils.readConfig()
 
 if (process.argv.length > 2) {
   log = console.log
 }
 else {
-  var ui = UI(model)
+  var ui = UI(config)
   log = ui.log
 }
 
-log('\n' + pkg.name, 'version', pkg.version)
-log('level version', pkg.dependencies.level + '\n')
+if (!argv.q) {
+  log('\n' + pkg.name, 'version', pkg.version)
+  log('level version', pkg.dependencies.level + '\n')
+}
 
 if (process.argv.length > 2) {
 
@@ -80,10 +73,45 @@ if (process.argv.length > 2) {
     process.exit(1)
   }
 
-  if (argv.i) {
-    require('./lib/repl')(argv, model)
+  try {
+    fs.statSync(argv._[0] + '/LOCK')
+  }
+  catch(ex) {
+    if (!argv.c) {
+      console.log('To create a database use -c')
+      process.exit(1)
+    }
+  }
+
+  var cli = false
+  var cli_commands = [
+    'tree', 'keys', 'values', 'cd', 'get', 
+    'put', 'del', 'createReadStream', 'betch'
+  ]
+
+  for (cmd in argv) {
+    if (cli_commands.indexOf(cmd) > -1) {
+      cli = true
+    }
+  }
+
+  if (!argv.valueEncoding) {
+    argv.valueEncoding = 'json'
+  }
+
+  if (!argv.keyEncoding) {
+    argv.keyEncoding = 'utf8'
+  }
+
+  if (!argv.q) {
+    console.log('value encoding set to %s', argv.valueEncoding.toUpperCase())
+    console.log('key encoding set to %s', argv.keyEncoding.toUpperCase())
+  }
+
+  if (cli) {
+    require('./lib/cli')(argv, config)
   }
   else {
-    require('./lib/cli')(argv, model)
+    require('./lib/repl')(argv, config)
   }
 }

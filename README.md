@@ -14,7 +14,7 @@ $npm install lev -g
 ```
 
 # TUI EXAMPLES
-This is the default mode when you type `lev` at the commandline.
+This is the mode entered when you type `lev` with no arguments.
 I recommend a modern terminal program like [iTerm2][2] on OSX or
 [urxvt] on Linux.
 

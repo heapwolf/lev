@@ -52,6 +52,12 @@ if (argv.h || argv.help) {
 
 var config = utils.readConfig()
 
+process.on('uncaughtException', function(err) {
+  if (err.type == 'EncodingError') {
+    log('\nencoding error. try specifying an encoding type.')
+  }
+})
+
 if (process.argv.length > 2) {
   log = console.log
 }

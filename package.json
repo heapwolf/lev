@@ -20,7 +20,9 @@
     "level-manifest": "~1.2.0"
   },
   "devDependencies": {
-    "tap": "0.4.3"
+    "tap": "0.4.3",
+    "rimraf": "^2.2.6",
+    "level-manifest": "^1.2.0"
   },
   "scripts": {
     "test": "node_modules/.bin/tap test/tests/*.js"

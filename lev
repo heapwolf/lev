@@ -19,6 +19,12 @@ var argv = args
   .alias('d', 'del')
   .describe('del', 'Remove an entity')
 
+  .alias('m', 'manifest')
+  .describe('manifest', 'Path to manifest file')
+
+  .alias('a', 'address')
+  .describe('address', 'ip and port to connect to (ip:port)')
+
   .alias('q', 'quiet')
   .describe('quiet', 'Only print critical messages')
 
@@ -54,8 +60,10 @@ var config = utils.readConfig()
 
 process.on('uncaughtException', function(err) {
   if (err.type == 'EncodingError') {
-    log('\nencoding error. try specifying an encoding type.')
+    return log('\nencoding error. try specifying an encoding type.')
   }
+  throw err
+  process.exit(1)
 })
 
 if (process.argv.length > 2) {
@@ -73,18 +81,20 @@ if (!argv.q) {
 
 if (process.argv.length > 2) {
 
-  if (argv._.length == 0) {
-    console.log('No path specified')
+  if (argv._.length == 0 && !argv.a) {
+    console.error('No path specified')
     process.exit(1)
   }
 
-  try {
-    fs.statSync(argv._[0] + '/LOCK')
-  }
-  catch(ex) {
-    if (!argv.c) {
-      console.log('To create a database use -c')
-      process.exit(1)
+  if (argv._.length) {
+    try {
+      fs.statSync(argv._[0] + '/LOCK')
+    }
+    catch(ex) {
+      if (!argv.c) {
+        console.error('To create a database use -c')
+        process.exit(1)
+      }
     }
   }
 

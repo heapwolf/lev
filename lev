@@ -3,7 +3,6 @@ var fs = require('fs')
 var args = require('optimist')
 var pkg = require('./package.json')
 var utils = require('./lib/utils')
-var UI = require('./lib/ui')
 
 var client
 var output
@@ -57,7 +56,7 @@ if (process.argv.length > 2) {
   log = console.log
 }
 else {
-  var ui = UI(config)
+  var ui = require('./lib/ui')(config)
   log = ui.log
 }
 

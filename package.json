@@ -25,7 +25,7 @@
     "level-manifest": "^1.2.0"
   },
   "scripts": {
-    "test": "node_modules/.bin/tap test/tests/*.js"
+    "test": "node_modules/.bin/tap --tap --stderr test/tests/*.js"
   },
   "repository": {
     "type": "git",

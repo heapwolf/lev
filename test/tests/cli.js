@@ -17,6 +17,7 @@ var defaults = { createIfMissing: true, valueEncoding: 'json' }
 
 var test = tap.test
 var db
+var manifest
 
 var load = Array
   .apply(null, Array(1024))
@@ -32,178 +33,191 @@ var load = Array
     }
   })
 
-test('Test usage message', function(t) {
+test('test cli', function(t) {
 
-  t.plan(1)
-  var c = 'lev -h'
+  rimraf(fixtures_path, afterCleanup)
 
-  exec(c, function(err, stdout, stderr) {
-    t.ok(stdout.indexOf('USAGE: lev') > -1, 'usage prints')
-    t.end()
-  })
-})
+  function afterCleanup(err) {
 
-test('Only create a database when told to do so', function(t) {
-
-  t.plan(1)
-  var c = 'lev .'
-
-  exec(c, function(err, stdout, stderr) {
-    t.ok(stderr.indexOf('-c') > -1, 'usage prints')
-    t.end()
-  })
-})
-
-test('Create a sample database and manifest', function(t) {
-
-  rimraf(fixtures_path, function(err) {
     t.ok(!err, 'removed cruft')
+
     db = level(fixtures_path, defaults)
-    fs.writeFileSync(manifest_path, JSON.stringify(manifestify(db)))
-    t.end()
-  })
-})
 
-test('Load a new database with some data', function(t) {
+    t.ok(db, 'created database')
+    
+    try {
+      manifest = manifestify(db)
+      fs.writeFileSync(manifest_path, JSON.stringify(manifest))
+    }
+    catch(ex) {
+      t.notOk(ex, 'failed to create manifest')
+    }
 
-  t.plan(1)
+    db.batch(load, afterLoading)
 
-  db.batch(load, function(err) {
+    function afterLoading(err) {
 
-    t.ok(!err, 'done batching')
-    db.close()
-    t.end()
-  })
-})
+      t.ok(!err, 'done batching')
+      db.close()
 
-test('get a key', function(t) {
+      t.test('Test usage message', function(t) {
 
-  t.plan(1)
-  var c = 'lev ' + fixtures_path + ' --get key_1 -q'
+        t.plan(1)
+        var c = 'lev -h'
 
-  exec(c, function(err, stdout, stderr) {
+        exec(c, function(err, stdout, stderr) {
+          t.ok(stdout.indexOf('USAGE: lev') > -1, 'usage prints')
+          t.end()
+        })
+      })
 
-    t.ok(stdout.indexOf('"index":1') > -1, 'got value for key_1')
-    t.end()
-  })
-})
+      t.test('Only create a database when told to do so', function(t) {
 
-test('put a value', function(t) {
+        t.plan(1)
+        var c = 'lev .'
 
-  t.plan(1)
-  var c = 'lev ' + fixtures_path + ' --put key_1 --value "x" -q'
+        exec(c, function(err, stdout, stderr) {
+          t.ok(stderr.indexOf('-c') > -1, 'usage prints')
+          t.end()
+        })
+      })
 
-  exec(c, function(err, stdout, stderr) {
+      test('get a key', function(t) {
 
-    t.ok(stdout.indexOf('"OK"') > -1, 'put new value for key_1')
-    t.end()
-  })
-})
+        t.plan(1)
+        var c = 'lev ' + fixtures_path + ' --get key_1 -q'
 
-test('put a value with specific encoding', function(t) {
+        exec(c, function(err, stdout, stderr) {
 
-  t.plan(1)
-  var c = 'lev ' + fixtures_path + ' --put key_1 --valueEncoding "binary" --value "x" -q'
+          t.ok(stdout.indexOf('"index":1') > -1, 'got value for key_1')
+          t.end()
+        })
+      })
 
-  exec(c, function(err, stdout, stderr) {
+      test('put a value', function(t) {
 
-    t.ok(stdout.indexOf('"OK"') > -1, 'put new binary value for key_1')
-    t.end()
-  })
-})
+        t.plan(1)
+        var c = 'lev ' + fixtures_path + ' --put key_1 --value "x" -q'
 
-test('key count', function(t) {
+        exec(c, function(err, stdout, stderr) {
 
-  t.plan(1)
-  var c = 'lev ' + fixtures_path + ' --keys -q | wc -w'
+          t.ok(stdout.indexOf('"OK"') > -1, 'put new value for key_1')
+          t.end()
+        })
+      })
 
-  exec(c, function(err, stdout, stderr) {
+      test('put a value with specific encoding', function(t) {
 
-    t.ok(parseInt(stdout.trim(), 10) == 1024, 'correct number of keys')
-    t.end()
-  })
-})
+        t.plan(1)
+        var c = 'lev ' + fixtures_path + ' --put key_1 --valueEncoding "binary" --value "x" -q'
 
-test('value count', function(t) {
+        exec(c, function(err, stdout, stderr) {
 
-  t.plan(1)
-  var c = 'lev ' + fixtures_path + ' --values --valueEncoding "utf8" -q | wc -w'
+          t.ok(stdout.indexOf('"OK"') > -1, 'put new binary value for key_1')
+          t.end()
+        })
+      })
 
-  exec(c, function(err, stdout, stderr) {
+      test('key count', function(t) {
 
-    t.ok(parseInt(stdout.trim(), 10) == 1024, 'correct number of values')
-    t.end()
-  })
-})
+        t.plan(1)
+        var c = 'lev ' + fixtures_path + ' --keys -q | wc -w'
 
-test('delete a key/value', function(t) {
+        exec(c, function(err, stdout, stderr) {
 
-  t.plan(1)
-  var c = 'lev ' + fixtures_path + ' --del key_1 -q'
+          t.ok(parseInt(stdout.trim(), 10) == 1024, 'correct number of keys')
+          t.end()
+        })
+      })
 
-  exec(c, function(err, stdout, stderr) {
+      test('value count', function(t) {
 
-    t.ok(stdout.indexOf('"OK"') > -1, 'deleted key_1')
-    t.end()
-  })
-})
+        t.plan(1)
+        var c = 'lev ' + fixtures_path + ' --values --valueEncoding "utf8" -q | wc -w'
 
-test('limit results', function(t) {
+        exec(c, function(err, stdout, stderr) {
 
-  t.plan(1)
-  var c = 'lev ' + fixtures_path + ' --keys --limit 10 -q | wc -w'
+          t.ok(parseInt(stdout.trim(), 10) == 1024, 'correct number of values')
+          t.end()
+        })
+      })
 
-  exec(c, function(err, stdout, stderr) {
+      test('delete a key/value', function(t) {
 
-    t.ok(parseInt(stdout.trim(), 10) == 10, 'correct number of keys')
-    t.end()
-  })
-})
+        t.plan(1)
+        var c = 'lev ' + fixtures_path + ' --del key_1 -q'
 
-// test('make a sublevel and put a key/value', function(t) {
+        exec(c, function(err, stdout, stderr) {
 
-//   t.plan(1)
-//   var c = 'lev ' + fixtures_path + ' --keys --limit 10 -q | wc -w'
+          t.ok(stdout.indexOf('"OK"') > -1, 'deleted key_1')
+          t.end()
+        })
+      })
 
-//   exec(c, function(err, stdout, stderr) {
+      test('limit results', function(t) {
 
-//     t.ok(parseInt(stdout.trim(), 10) == 10, 'correct number of keys')
-//     t.end()
-//   })
-// })
+        t.plan(1)
+        var c = 'lev ' + fixtures_path + ' --keys --limit 10 -q | wc -w'
 
+        exec(c, function(err, stdout, stderr) {
 
-// test('change sublevel and get keys', function(t) {
+          t.ok(parseInt(stdout.trim(), 10) == 10, 'correct number of keys')
+          t.end()
+        })
+      })
 
-//   t.plan(1)
-//   var c = 'lev ' + fixtures_path + ' --keys --limit 10 -q | wc -w'
+      test('make a sublevel and put a key/value', function(t) {
 
-//   exec(c, function(err, stdout, stderr) {
+        t.plan(1)
+        var c = 'lev ' + fixtures_path + ' --cd "l1" --put "k1" --value "v1"'
 
-//     t.ok(parseInt(stdout.trim(), 10) == 10, 'correct number of keys')
-//     t.end()
-//   })
-// })
+        exec(c, function(err, stdout, stderr) {
 
-test('connect to networked database and get the last 10 keys', function(t) {
+          t.ok(stdout.indexOf('"OK"') > -1, 'put new key at new sublevel')
+          t.end()
+        })
+      })
 
-  t.plan(1)
-  var server_port
+      test('get the value from a key inside a sublevel', function(t) {
 
-  var server = net.createServer(function (con) {
-    con.pipe(multilevel.server(db)).pipe(con)
-    server_port = server.address().port
-  })
+        t.plan(1)
+        var c = 'lev ' + fixtures_path + ' --cd "l1" --get "k1"'
 
-  server.listen(0, function() {
+        exec(c, function(err, stdout, stderr) {
 
-    var c = 'lev --keys --reverse --limit 10 -q -a 127.0.0.1:' + server_port + ' -m ' + manifest_path
+          t.ok(stdout.indexOf('"v1"') > -1, 'get new key from new sublevel')
+          t.end()
+        })
+      })
 
-    exec(c, function(err, stdout, stderr) {
+      t.test('connect to networked database and get the last 10 keys', function(t) {
 
-      t.ok(parseInt(stdout.trim(), 10) == 10, 'correct number of keys' + stderr)
-      server.close()
-      t.end()
-    })
-  })
+        //t.plan(2)
+
+        var server = net.createServer(function (con) {
+
+          t.ok(true, 'server gets connection')
+          con.pipe(multilevel.server(db)).pipe(con)
+        })
+
+        server.on('listening', function() {
+
+          var server_port = server.address().port
+
+          t.ok(server_port, 'got port to listen on')
+
+          var c = 'lev --keys --reverse --limit 10 -q -a 127.0.0.1:' + 
+            server_port + ' -m ' + manifest_path + ' | wc -w'
+
+          exec(c, function(err, stdout, stderr) {
+            server.close()
+            t.ok(parseInt(stdout.trim(), 10) == 10, 'correct number of keys')
+            t.end()
+          })
+        })
+
+        server.listen(0)
+      })
+    }
+  }
 })

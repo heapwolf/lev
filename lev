@@ -86,7 +86,7 @@ if (process.argv.length > 2) {
     process.exit(1)
   }
 
-  if (argv._.length) {
+  if (argv._.length && !argv.a) {
     try {
       fs.statSync(argv._[0] + '/LOCK')
     }

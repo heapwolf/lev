@@ -17,7 +17,6 @@ var defaults = { createIfMissing: true, valueEncoding: 'json' }
 
 var test = tap.test
 var db
-var manifest
 
 var load = Array
   .apply(null, Array(1024))
@@ -46,8 +45,8 @@ test('test cli', function(t) {
     t.ok(db, 'created database')
     
     try {
-      manifest = manifestify(db)
-      fs.writeFileSync(manifest_path, JSON.stringify(manifest))
+      var manifest = JSON.stringify(manifestify(db))
+      fs.writeFileSync(manifest_path, manifest)
     }
     catch(ex) {
       t.notOk(ex, 'failed to create manifest')
@@ -56,11 +55,12 @@ test('test cli', function(t) {
     db.batch(load, afterLoading)
 
     function afterLoading(err) {
-
+      
       t.ok(!err, 'done batching')
       db.close()
 
-      t.test('Test usage message', function(t) {
+
+      test('Test usage message', function(t) {
 
         t.plan(1)
         var c = 'lev -h'
@@ -71,7 +71,8 @@ test('test cli', function(t) {
         })
       })
 
-      t.test('Only create a database when told to do so', function(t) {
+
+      test('Only create a database when told to do so', function(t) {
 
         t.plan(1)
         var c = 'lev .'
@@ -81,6 +82,7 @@ test('test cli', function(t) {
           t.end()
         })
       })
+
 
       test('get a key', function(t) {
 
@@ -94,6 +96,7 @@ test('test cli', function(t) {
         })
       })
 
+
       test('put a value', function(t) {
 
         t.plan(1)
@@ -105,6 +108,7 @@ test('test cli', function(t) {
           t.end()
         })
       })
+
 
       test('put a value with specific encoding', function(t) {
 
@@ -118,6 +122,7 @@ test('test cli', function(t) {
         })
       })
 
+
       test('key count', function(t) {
 
         t.plan(1)
@@ -129,6 +134,7 @@ test('test cli', function(t) {
           t.end()
         })
       })
+
 
       test('value count', function(t) {
 
@@ -142,6 +148,7 @@ test('test cli', function(t) {
         })
       })
 
+
       test('delete a key/value', function(t) {
 
         t.plan(1)
@@ -153,6 +160,7 @@ test('test cli', function(t) {
           t.end()
         })
       })
+
 
       test('limit results', function(t) {
 
@@ -166,6 +174,7 @@ test('test cli', function(t) {
         })
       })
 
+
       test('make a sublevel and put a key/value', function(t) {
 
         t.plan(1)
@@ -177,6 +186,7 @@ test('test cli', function(t) {
           t.end()
         })
       })
+
 
       test('get the value from a key inside a sublevel', function(t) {
 
@@ -190,9 +200,12 @@ test('test cli', function(t) {
         })
       })
 
-      t.test('connect to networked database and get the last 10 keys', function(t) {
 
-        //t.plan(2)
+      test('connect to networked database and get the last 10 keys', function(t) {
+
+        t.plan(3)
+
+        db.open()
 
         var server = net.createServer(function (con) {
 
@@ -207,17 +220,19 @@ test('test cli', function(t) {
           t.ok(server_port, 'got port to listen on')
 
           var c = 'lev --keys --reverse --limit 10 -q -a 127.0.0.1:' + 
-            server_port + ' -m ' + manifest_path + ' | wc -w'
+           server_port + ' -m ' + manifest_path + ' | wc -w'
 
           exec(c, function(err, stdout, stderr) {
+            t.ok(parseInt(stdout.trim(), 10) == 10, 'correct number of keys from remote db' + stdout + stderr)
             server.close()
-            t.ok(parseInt(stdout.trim(), 10) == 10, 'correct number of keys')
             t.end()
           })
         })
 
         server.listen(0)
       })
+
+      t.end()
     }
   }
 })

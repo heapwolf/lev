@@ -54,9 +54,9 @@ For connecting to a [multilevel][1] enabled instance, specify the
 
 ## REPL
 
-Start the interactive mod by providing a path and the `-i` option.
+Provide just a path and no flags to start the REPL.
 ```bash
-$lev path/to/db -i
+$lev path/to/db
 ```
 
 #### `ls` List the keys in the current range.
@@ -81,18 +81,27 @@ Supports `cd ..` to navigate down a level. `cd /` to navigate to the
 root of the database. And supports paths `cd foo/bar/bazz`.
 
 ## USER SETTINGS
-You can create a `.lev` file in your home directory and it will be used 
-to set the defaults. Command line arguments will override the default 
-settings in this file.
+A `.lev` file will be created in your home directory. You can manage this
+will the TUI or by hand.
 
 ```json
 {
-  "defaults": {
-    "createIfMissing": true,
-    "valueEncoding": "json",
-    "keyEncoding": "json",
-    "compression": "true",
-    "cacheSize": 8388608
+  "query": {
+    "start": "",
+    "end": "",
+    "reverse": false,
+    "limit": 1000
+  },
+  "key": null,
+  "connections": {
+    "Default":{
+      "path":"",
+      "keyEncoding":"utf8",
+      "valueEncoding":"json",
+      "local":true,
+      "compression":true,
+      "cacheSize":8388608
+    }
   }
 }
 ```

@@ -174,6 +174,18 @@ test('test cli', function(t) {
         })
       })
 
+      test('limit and reverse results', function(t) {
+
+        t.plan(1)
+        var c = 'lev ' + fixtures_path + ' --keys --reverse --limit 1 -q'
+
+        exec(c, function(err, stdout, stderr) {
+
+          t.ok(stdout.indexOf('key_999') > -1, 'correct key')
+          t.end()
+        })
+      })
+
 
       test('make a sublevel and put a key/value', function(t) {
 

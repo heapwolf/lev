@@ -47,6 +47,12 @@ var argv = args
 
   .describe('cd', 'Change into or create a sublevel')
 
+  .boolean('conns')
+  .describe('conns', 'List connections available in config')
+
+  .alias('u', 'use')
+  .describe('use', 'Use one of the preconfigured connections by name')
+
   .alias('h', 'help')
   .describe('help', 'Print this help text')
   .argv
@@ -57,6 +63,7 @@ if (argv.h || argv.help) {
 }
 
 var config = utils.readConfig()
+var conn
 
 process.on('uncaughtException', function(err) {
   if (err.type == 'EncodingError') {
@@ -79,7 +86,27 @@ if (!argv.q) {
   log('level version', pkg.dependencies.level + '\n')
 }
 
+if (argv.conns) {
+  log('Connections:\n' + Object.keys(config.connections).join('\n'))
+  process.exit()
+}
+
 if (process.argv.length > 2) {
+
+  if (argv.u) {
+    if (!config.connections.hasOwnProperty(argv.u)) {
+      console.error('The connection "' + argv.u + '" is not preconfigured.'
+        + '\nList connections with --conns')
+      process.exit(1)
+    }
+    conn = config.connections[argv.u]
+    if (conn.host) {
+      argv.address = argv.a = conn.host + ':' + conn.port
+      argv.manifest = argv.m = conn.manifest
+    } else if (conn.path) {
+      argv._[0] = conn.path
+    }
+  }
 
   if (argv._.length == 0 && !argv.a) {
     console.error('No path specified')

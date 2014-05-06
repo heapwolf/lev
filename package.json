@@ -1,6 +1,6 @@
 {
   "name": "lev",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "bin": "./lev",
   "description": "CLI/REPL/TUI for levelDB/Nodebase",
   "main": "lev",

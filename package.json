@@ -13,7 +13,7 @@
     "level": "0.18.0",
     "level-delete-range": "0.1.0",
     "level-manifest": "~1.2.0",
-    "level-sublevel": "~4.8.0",
+    "level-sublevel": "^6.3.15",
     "level-subtree": "~1.1.1",
     "multilevel": "^6.0.0",
     "optimist": "0.3.4",

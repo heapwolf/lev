@@ -8,10 +8,17 @@ var cli = require('./lib/cli');
 
 module.exports = function(args) {
 
+  //
+  // find where the location by examining the arguments
+  // and create an instance to work with.
+  //
   locate(args);
-
   var db = getDB(args);
 
+  //
+  // if any of these commands are specified as arguments
+  // than the program should not be run in REPL mode.
+  //
   var cliCommands = [
     'keys', 'values', 'get', 
     'put', 'del', 'createReadStream', 'batch'
@@ -25,6 +32,9 @@ module.exports = function(args) {
     return cli(db, args);
   }
 
+  //
+  // create the instance of the repl and start it.
+  //
   var repl = createREPL(db, args, cache);
 
   history(repl, args);

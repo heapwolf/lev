@@ -6,7 +6,7 @@ A simple commandline tool and REPL for leveldb.
 - REPL automatically saves and reloads REPL history
 
 # SCREENSHOT
-![screenshot](/docs/screenshot.png')
+![screenshot](/docs/screenshot.png)
 
 # REPL COMMANDS
 

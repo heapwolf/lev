@@ -1,9 +1,9 @@
 {
   "name": "lev",
-  "version": "1.0.0",
-  "description": "",
+  "version": "3.0.0",
   "main": "index.js",
   "bin": "./bin/lev",
+  "description": "CLI & REPL for LevelDB",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -11,8 +11,24 @@
     "type": "git",
     "url": "https://github.com/hij1nx/lev.git"
   },
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "leveldb",
+    "levelDB",
+    "level-db",
+    "levelup",
+    "level",
+    "repl",
+    "database",
+    "databases",
+    "nodebase",
+    "db",
+    "keyvalue",
+    "key/value"
+  ],
+  "preferGlobal": true,
+  "author": "hij1nx",
+  "license": "MIT",
+  "readmeFilename": "README.md",
   "bugs": {
     "url": "https://github.com/hij1nx/lev/issues"
   },

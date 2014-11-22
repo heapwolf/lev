@@ -12,6 +12,7 @@ A simple and convenient commandline tool and REPL for [`leveldb`](http://leveldb
 ![screenshot](/docs/screenshot.png)
 
 # REPL COMMANDS
+Use upper or lower case for the following commands.
 
 ## GET &lt;key&gt;
 Get a key from the database.
@@ -22,6 +23,9 @@ set to `json`, these values will be parsed from strings into `json`.
 
 ## DEL &lt;key&gt;
 Delete a key from the database.
+
+## LS
+Get all the keys in the current range.
 
 ## START &lt;key-pattern&gt;
 Defines the start of the current range. You can also use `GT` or `GTE`.

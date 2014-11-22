@@ -35,3 +35,28 @@ Reverse the records in the current range.
 # CLI COMMANDS
 These all match the parameters used with [`levelup`](https://github.com/rvagg/node-levelup).
 
+## --start &lt;key-pattern&gt;
+Specify the start of the current range. You can also use `gt` or `gte`.
+
+## --end &lt;key-pattern&gt;
+Specify the end of the current range. You can also use `lt` and `lte`.
+
+## --values
+Only list the all of the values in the current range.
+
+## --keys
+Only list all of the keys in the current range.
+
+## --keyEncoding &lt;string&gt;
+Specify the encoding for the keys.
+
+## --valueEncoding &lt;string&gt;
+Specify the encoding for the values.
+
+## --limit &lt;number&gt;
+Limit the number of records emitted in the current range.
+
+## --reverse
+Reverse the stream.
+
+

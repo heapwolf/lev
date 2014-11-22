@@ -1,54 +1,26 @@
 {
   "name": "lev",
-  "version": "2.1.4",
-  "bin": "./lev",
-  "description": "CLI/REPL/TUI for levelDB/Nodebase",
-  "main": "lev",
-  "dependencies": {
-    "archy": "0.0.2",
-    "blessed": "0.0.29",
-    "deep-extend": "^0.2.8",
-    "deepmerge": "~0.2.5",
-    "event-stream": "~3.0.14",
-    "level": "0.18.0",
-    "level-delete-range": "0.1.0",
-    "level-manifest": "~1.2.0",
-    "level-sublevel": "~4.8.0",
-    "level-subtree": "~1.1.1",
-    "multilevel": "^6.0.0",
-    "optimist": "0.3.4",
-    "reconnect-net": "0.0.0",
-    "tabulate": "1.0.0"
-  },
-  "devDependencies": {
-    "tap": "0.4.3",
-    "rimraf": "^2.2.6",
-    "level-manifest": "^1.2.0"
-  },
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "test": "node_modules/.bin/tap --tap --stderr test/tests/*.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/hij1nx/lev.git"
+    "url": "https://github.com/hij1nx/lev.git"
   },
-  "keywords": [
-    "leveldb",
-    "levelDB",
-    "level-db",
-    "levelup",
-    "level",
-    "repl",
-    "database",
-    "databases",
-    "nodebase",
-    "db",
-    "keyvalue",
-    "key/value",
-    "tui"
-  ],
-  "preferGlobal": true,
-  "author": "hij1nx",
-  "license": "MIT",
-  "readmeFilename": "README.md"
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hij1nx/lev/issues"
+  },
+  "homepage": "https://github.com/hij1nx/lev",
+  "dependencies": {
+    "level": "^0.18.0",
+    "minimist": "^1.1.0",
+    "rc": "^0.5.4",
+    "tabulate": "^1.0.0",
+    "xtend": "^4.0.0"
+  }
 }

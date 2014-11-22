@@ -1,3 +1,6 @@
+# STATUS
+BETA
+
 # SYNOPSIS
 A simple and convenient commandline tool and REPL for [`leveldb`](http://leveldb.org/).
 

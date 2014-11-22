@@ -2,7 +2,7 @@
 A simple and convenient commandline tool and REPL for [`leveldb`](http://leveldb.org/).
 
 # FEATURES
-- REPL with colorized auto-complete and key suggestions
+- REPL with colorized tab-completion and zsh/fish style key suggestions
 - REPL automatically saves and reloads REPL history
 
 # SCREENSHOT

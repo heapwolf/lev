@@ -33,7 +33,9 @@ Limit the number of records in the current range (defaults to 5000).
 Reverse the records in the current range.
 
 # CLI COMMANDS
-These all match the parameters used with [`levelup`](https://github.com/rvagg/node-levelup).
+These all match the parameters used with 
+[`levelup`](https://github.com/rvagg/node-levelup). The default encoding
+for the database is set to `json`.
 
 ## --start &lt;key-pattern&gt;
 Specify the start of the current range. You can also use `gt` or `gte`.
@@ -42,10 +44,11 @@ Specify the start of the current range. You can also use `gt` or `gte`.
 Specify the end of the current range. You can also use `lt` and `lte`.
 
 ## --values
-Only list the all of the values in the current range.
+Only list the all of the values in the current range. 
+Emit as a new-line delimited stream of json.
 
 ## --keys
-Only list all of the keys in the current range.
+Only list all of the keys in the current range. Will tabularize the output.
 
 ## --keyEncoding &lt;string&gt;
 Specify the encoding for the keys.

@@ -35,6 +35,7 @@
   "homepage": "https://github.com/hij1nx/lev",
   "dependencies": {
     "level": "^0.18.0",
+    "minimatch": "^2.0.1",
     "minimist": "^1.1.0",
     "rc": "^0.5.4",
     "tabulate": "^1.0.0",

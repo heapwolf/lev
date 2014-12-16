@@ -20,7 +20,7 @@ module.exports = function(args) {
   // than the program should not be run in REPL mode.
   //
   var cliCommands = [
-    'keys', 'values', 'get', 
+    'keys', 'values', 'get', 'match',
     'put', 'del', 'createReadStream', 'batch'
   ];
   

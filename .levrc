@@ -1,0 +1,8 @@
+{
+  "keyEncoding": "utf8",
+  "valueEncoding": "json",
+  "compression": true,
+  "cacheSize": 8388608,
+  "host": "localhost",
+  "port": 3000
+}

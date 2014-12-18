@@ -1,6 +1,6 @@
 {
   "name": "lev",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "main": "index.js",
   "bin": "./bin/lev",
   "description": "CLI & REPL for LevelDB",
@@ -37,6 +37,7 @@
     "level": "^0.18.0",
     "minimatch": "^2.0.1",
     "minimist": "^1.1.0",
+    "multilevel": "^6.0.1",
     "rc": "^0.5.4",
     "tabulate": "^1.0.0",
     "xtend": "^4.0.0"

@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 var fs = require('fs');
-var conf = require('../defaults.json');
+var args = require('rc')('lev');
+require('../index')(args);
 
-require('rc')('lev', conf);
-require('../index')(conf);

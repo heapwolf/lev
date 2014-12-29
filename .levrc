@@ -4,5 +4,8 @@
   "compression": true,
   "cacheSize": 8388608,
   "host": "localhost",
-  "port": 3000
+  "port": 3000,
+  "createIfMissing": false,
+  "errorIfExists": false
 }
+

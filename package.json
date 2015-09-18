@@ -1,6 +1,6 @@
 {
   "name": "lev",
-  "version": "3.2.2",
+  "version": "3.2.3",
   "main": "index.js",
   "bin": "./bin/lev",
   "description": "CLI & REPL for LevelDB",

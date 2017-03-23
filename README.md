@@ -13,6 +13,18 @@ A simple and convenient commandline tool and REPL for [`leveldb`](http://leveldb
 # SCREENSHOT
 ![screenshot](/docs/screenshot.png)
 
+# INSTALLATION
+
+```
+$ npm install -g lev
+```
+
+# BASIC USAGE
+
+```
+$ lev path/to/db
+```
+
 # REPL COMMANDS
 Use upper or lower case for the following commands.
 
@@ -42,7 +54,7 @@ Limit the number of records in the current range (defaults to 5000).
 Reverse the records in the current range.
 
 # CLI COMMANDS
-These all match the parameters used with 
+These all match the parameters used with
 [`levelup`](https://github.com/rvagg/node-levelup). The default encoding
 for the database is set to `json`.
 
@@ -53,7 +65,7 @@ Specify the start of the current range. You can also use `gt` or `gte`.
 Specify the end of the current range. You can also use `lt` and `lte`.
 
 ## --values
-Only list the all of the values in the current range. 
+Only list the all of the values in the current range.
 Emit as a new-line delimited stream of json.
 
 ## --keys

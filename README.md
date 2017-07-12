@@ -1,7 +1,6 @@
 # STATUS
 
-[![Join the chat at https://gitter.im/hij1nx/lev](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/hij1nx/lev?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-BETA
+[![development sponsored by voltra.co](https://img.shields.io/badge/Development%20sponsored%20by-Voltra.co-yellow.svg)](https://voltra.co/)
 
 # SYNOPSIS
 A simple and convenient commandline tool and REPL for [`leveldb`](http://leveldb.org/).

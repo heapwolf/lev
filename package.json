@@ -41,6 +41,7 @@
     "minimist": "^1.1.0",
     "multilevel": "^7.3.0",
     "rc": "^0.5.4",
+    "shlex.js": "0.0.1",
     "tabulate": "^1.0.0",
     "xtend": "^4.0.0"
   }

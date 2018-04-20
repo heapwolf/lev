@@ -79,4 +79,6 @@ Limit the number of records emitted in the current range.
 ## --reverse
 Reverse the stream.
 
+## --line
+Output one key per line
 

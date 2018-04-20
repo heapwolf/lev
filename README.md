@@ -70,9 +70,6 @@ Emit as a new-line delimited stream of json.
 ## --keys
 Only list all of the keys in the current range. Will tabularize the output.
 
-## --keyEncoding &lt;string&gt;
-Specify the encoding for the keys.
-
 ## --valueEncoding &lt;string&gt;
 Specify the encoding for the values.
 

@@ -156,6 +156,15 @@ Output one key per line (instead of the default tabularized output)
 lev --keys --line
 ```
 
+## --length
+Output the length of the current range
+```sh
+# Output the length of the whole database
+lev --length
+# Counts the keys and values between 'foo' and 'fooz'
+lev --start 'foo' --end 'fooz' --length
+```
+
 ## --valueEncoding &lt;string&gt;
 Specify the encoding for the values (Defaults to 'json').
 ```sh

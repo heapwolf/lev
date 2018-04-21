@@ -21,13 +21,13 @@ module.exports = function(args) {
   //
   var cliCommands = [
     'keys', 'values', 'get', 'match',
-    'put', 'del', 'all', 'batch'
+    'put', 'del', 'all', 'batch', 'length'
   ];
-  
+
   var cliMode = Object.keys(args).some(function(cmd) {
     return cliCommands.indexOf(cmd) > -1;
   });
- 
+
   if (cliMode) {
     return cli(db, args);
   }

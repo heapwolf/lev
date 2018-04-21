@@ -93,11 +93,11 @@ Emit as a new-line delimited stream of json.
 lev --values
 ```
 
-## --stream
+## --all
 List all the keys and values in the current range.
 Emit as a new-line delimited stream of json.
 ```sh
-lev --stream
+lev --all
 ```
 
 ## --start &lt;key-pattern&gt;

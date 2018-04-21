@@ -21,7 +21,7 @@ module.exports = function(args) {
   //
   var cliCommands = [
     'keys', 'values', 'get', 'match',
-    'put', 'del', 'stream', 'batch'
+    'put', 'del', 'all', 'batch'
   ];
   
   var cliMode = Object.keys(args).some(function(cmd) {

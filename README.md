@@ -129,6 +129,7 @@ Filter keys or values by a pattern applied on the key
 ```sh
 lev  --keys --match 'f*'
 lev  --values --match 'f*'
+lev  --all --match 'f*'
 # Equivalent to
 lev --match 'f*'
 ```

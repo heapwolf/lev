@@ -76,8 +76,15 @@ lev --del foo
 ```
 
 ## --batch &lt;operations&gt;
+Put or delete several values, using [`levelup` batch syntax](https://github.com/Level/levelup#dbbatcharray-options-callback-array-form)
 ```sh
-lev --batch '[{"type":"del","key":"father"},{"type":"put","key":"name","value":"Yuri Irsenovich Kim"},{"type":"put","key":"dob","value":"16 February 1941"},{"type":"put","key":"spouse","value":"Kim Young-sook"},{"type":"put","key":"occupation","value":"Clown"}]'
+lev --batch '[
+{"type":"del","key":"father"},
+{"type":"put","key":"name","value":"Yuri Irsenovich Kim"},
+{"type":"put","key":"dob","value":"16 February 1941"},
+{"type":"put","key":"spouse","value":"Kim Young-sook"},
+{"type":"put","key":"occupation","value":"Clown"}
+]'
 ```
 
 ## --keys

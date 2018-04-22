@@ -167,7 +167,7 @@ lev --keys --line
 ## --length
 Output the length of the current range
 ```sh
-# Output the length of the whole database
+# Count all the key/value pairs in the database
 lev --length
 # Counts the keys and values between 'foo' and 'fooz'
 lev --start 'foo' --end 'fooz' --length

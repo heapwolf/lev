@@ -86,6 +86,17 @@ lev --batch '[
 {"type":"put","key":"occupation","value":"Clown"}
 ]'
 ```
+or from a file
+```sh
+echo '[
+{"type":"del","key":"father"},
+{"type":"put","key":"name","value":"Yuri Irsenovich Kim"},
+{"type":"put","key":"dob","value":"16 February 1941"},
+{"type":"put","key":"spouse","value":"Kim Young-sook"},
+{"type":"put","key":"occupation","value":"Clown"}
+]' > ops.json
+lev --batch ./ops.json
+```
 
 ## --keys
 List all the keys in the current range. Will tabularize the output by default (see `--line`).

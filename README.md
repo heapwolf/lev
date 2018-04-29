@@ -88,6 +88,8 @@ lev --batch '[
 ```
 or from a file
 ```sh
+# there should be one entry per line
+# either as valid JSON
 echo '[
 {"type":"del","key":"father"},
 {"type":"put","key":"name","value":"Yuri Irsenovich Kim"},
@@ -95,7 +97,27 @@ echo '[
 {"type":"put","key":"spouse","value":"Kim Young-sook"},
 {"type":"put","key":"occupation","value":"Clown"}
 ]' > ops.json
+# or as newline-delimited JSON
+echo '
+{"type":"del","key":"father"}
+{"type":"put","key":"name","value":"Yuri Irsenovich Kim"}
+{"type":"put","key":"dob","value":"16 February 1941"}
+{"type":"put","key":"spouse","value":"Kim Young-sook"}
+{"type":"put","key":"occupation","value":"Clown"}
+' > ops.json
 lev --batch ./ops.json
+```
+
+If the type is omitted, defaults to `put`, which allows to use the command to do imports/exports, in combination with [`--all`](#--all):
+```sh
+lev --all > leveldb.export
+lev /tmp/my-new-db --batch leveldb.export
+```
+If it's a large export, you can compress it on the fly
+```sh
+lev --all | gzip -9 > leveldb.export.gz
+gzip -dk leveldb.export.gz
+lev /tmp/my-new-db --batch leveldb.export
 ```
 
 ## --keys
@@ -116,6 +138,11 @@ List all the keys and values in the current range.
 Emit as a new-line delimited stream of json.
 ```sh
 lev --all
+```
+It can be used to create an export of the database, to be imported with [`--batch`](#--batch)
+```sh
+lev --all > leveldb.export
+lev /tmp/my-new-db --batch leveldb.export
 ```
 
 ## --start &lt;key-pattern&gt;

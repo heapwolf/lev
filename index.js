@@ -20,8 +20,8 @@ module.exports = function(args) {
   // than the program should not be run in REPL mode.
   //
   var cliCommands = [
-    'keys', 'values', 'get', 'match',
-    'put', 'del', 'all', 'batch', 'length'
+    'keys', 'values', 'get', 'match', 'put', 'del',
+    'all', 'batch', 'length', 'start', 'end', 'limit'
   ];
 
   var cliMode = Object.keys(args).some(function(cmd) {

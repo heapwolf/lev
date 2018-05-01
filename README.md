@@ -108,6 +108,7 @@ echo '
 lev --batch ./ops.json
 ```
 
+### Import / Export
 If the type is omitted, defaults to `put`, which allows to use the command to do imports/exports, in combination with [`--all`](#--all):
 ```sh
 lev --all > leveldb.export
@@ -118,6 +119,15 @@ If it's a large export, you can compress it on the fly
 lev --all | gzip -9 > leveldb.export.gz
 gzip -dk leveldb.export.gz
 lev /tmp/my-new-db --batch leveldb.export
+```
+
+### Delete by range
+The `--batch` option can also be used to delete key/values by range in 2 steps:
+```
+# 1 - collect all the key/values to delete
+lev --all --start 'foo' --end 'fooz' > ./to_delete
+# 2 - pass the file as argument to the --batch option with a --del flag
+lev --batch ./to_delete --del
 ```
 
 ## --keys

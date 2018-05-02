@@ -234,3 +234,21 @@ lev --location /tmp/test-db --keys
 # Equivalent to
 lev /tmp/test-db --keys
 ```
+
+## --map &lt;JS function string or path&gt;
+Pass streams results in a map function
+* either inline
+```sh
+lev --keys --map 'key => key.split(":")[1]'
+lev --all --map 'data => data.value.replace(data.key, "")'
+```
+* or from a JS file that exports a function
+```js
+# in ./map_fn.js
+module.exports = key => key.split(":")[1]
+```
+```sh
+lev --keys --map ./map_fn.js
+```
+
+If the function, returns null or undefined, the result is filtered-out

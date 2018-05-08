@@ -35,6 +35,7 @@
   "homepage": "https://github.com/hij1nx/lev",
   "dependencies": {
     "bytewise": "^1.1.0",
+    "cli-prompt": "^0.6.0",
     "level": "^1.3.0",
     "level-party": "^3.0.4",
     "minimatch": "^2.0.1",

@@ -12,7 +12,16 @@ module.exports = function(args) {
   // find where the location by examining the arguments
   // and create an instance to work with.
   //
-  locate(args);
+  locate(args, function (err) {
+    if (err) {
+      console.error(err);
+      return process.exit(1);
+    }
+    init(args);
+  });
+};
+
+function init (args) {
   var db = getDB(args);
 
   //
@@ -39,6 +48,5 @@ module.exports = function(args) {
 
   history(repl, args);
   completion(repl, cache);
-
 };
 
